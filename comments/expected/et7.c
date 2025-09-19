@@ -1,0 +1,14 @@
+                                                      
+                                                      
+                                                      
+procedure main (void)   
+{
+    int counter; 
+
+    counter = 100 / 2;
+    printf ("counter = %d\n", counter);
+    printf ("/* Will this string be displayed? */\n");
+    printf ("// Will this string be displayed?\n");
+    printf ("// Will this \"double // string\" be displayed?\n");
+    printf ('/* Will this \'single // string\' be displayed? */\n');
+}
