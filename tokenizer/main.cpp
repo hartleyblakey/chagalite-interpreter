@@ -1,13 +1,10 @@
 /**
  * @file main.cpp
  * @author Hartley Blakey
- * @brief Program to remove the comments from a ChagaLite source file and print the
- * resulting code to the standard output. If errors were encountered when processing
- * they are printed instead of the output, and a non-zero exit code is returned.
+ * @brief Program to tokenize a ChagaLite source file, printing the tokens or
+ *        any errors if the lexer encountered an error
  * 
- * Usage: ./comments file.c
- * 
- * @date 2025-09-06
+ * Usage: ./tokenize file.c
  */
 
 #include <iostream>
@@ -48,6 +45,7 @@ int main(int argc, char* argv[]) {
 
     std::vector<Token> tokens;
 
+    // read all tokens before printing any, in case we encounter an error
     while (tokenizer.ok()) {
         tokens.push_back(tokenizer.next());
         if (tokens.back().type == END) {
