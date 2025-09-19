@@ -128,9 +128,29 @@ public:
         pending = Token(UNKNOWN);
     }
 
-    std::string getError();
+    
+
+    /**
+     * @brief Function to return the next token
+     * 
+     * @return The next token, with type END if there are no more tokens to read
+     */
     Token next();
+
+    /**
+     * @brief Check if the tokenizer has encountered an error while parsing
+     * 
+     * @return true if no error has occurred and it is safe to call next()
+     * @return false if there is an error and next() should not be called again
+     */
     bool ok();
+
+    /**
+     * @brief Get the error explaining the false ok() return
+     * 
+     * @return the error string
+     */
+    std::string getError();
 };
 
 
