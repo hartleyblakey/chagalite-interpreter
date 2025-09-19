@@ -123,7 +123,7 @@ Token Tokenizer::next() {
                 } else if (c == '\\') {
                     state = D_STR_ESC;
                     if (stringCharState == STR_BASE) {
-                        // only hex digits are escaped characters for now
+                        // only single strings have non-hex escaped characters for now
                         stringCharState = REG_CHAR;
                     } else {
                         stringCharState = FULL_STR;
@@ -149,8 +149,7 @@ Token Tokenizer::next() {
                 } else if (c == '\\') {
                     state = S_STR_ESC;
                     if (stringCharState == STR_BASE) {
-                        // only hex digits are escaped characters for now
-                        stringCharState = REG_CHAR;
+                        stringCharState = ESC_CHAR;
                     } else {
                         stringCharState = FULL_STR;
                     }
@@ -288,11 +287,6 @@ Token Tokenizer::next() {
                 if (c == 'x') {
                     // hex digit
                     state = S_STR_HEX;
-
-                    if (stringCharState == REG_CHAR) {
-                        // only hex digits are escaped characters for now
-                        stringCharState = ESC_CHAR;
-                    }
                 } else if (singleCharEscape(c)) {
                     state = IN_S_STRING;
                 } else {

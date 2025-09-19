@@ -331,7 +331,7 @@ Token:      ==
 Token type: SINGLE_QUOTE
 Token:      '
 
-Token type: STRING
+Token type: ESCAPED_CHARACTER
 Token:      \n
 
 Token type: SINGLE_QUOTE
