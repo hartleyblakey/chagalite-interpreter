@@ -28,13 +28,21 @@ bool hexDigit(char c) {
     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 }
 
+Token Tokenizer::peek() {
+    if (pending.empty()) {
+        // front instead of back for double token edge case (string closing quote)
+        pending.push_front(next());
+    }
+    return pending.front();
+}
+
 Token Tokenizer::next() {
 
     Token t(UNKNOWN);
     
-    if (pending.type != UNKNOWN) {
-        t = pending;
-        pending = Token(UNKNOWN);
+    if (!pending.empty()) {
+        t = pending.front();
+        pending.pop_front();
         return t;
     }
 
@@ -91,6 +99,8 @@ Token Tokenizer::next() {
                     t = Token(DIVIDE, file.substr(i, 1));
                 } else if (c == '%') {
                     t = Token(MODULO, file.substr(i, 1));
+                } else if (c == '^') {
+                    t = Token(CARET, file.substr(i, 1));
                 } else if (c == '=') {
                     state = ONE_EQUAL;
                 } else if (c == '>') {
@@ -113,7 +123,7 @@ Token Tokenizer::next() {
 
             case IN_D_STRING:
                 if (c == '\"') {
-                    pending = Token(DOUBLE_QUOTE, file.substr(i, 1));
+                    pending.push_back(Token(DOUBLE_QUOTE, file.substr(i, 1)));
                     if (stringCharState == ESC_CHAR) {
                         t = Token(ESCAPED_CHARACTER, file.substr(tokenStart + 1, i - tokenStart - 1));
                     } else {
@@ -139,7 +149,7 @@ Token Tokenizer::next() {
 
             case IN_S_STRING:
                 if (c == '\'') {
-                    pending = Token(SINGLE_QUOTE, file.substr(i, 1));
+                    pending.push_back(Token(SINGLE_QUOTE, file.substr(i, 1)));
                     if (stringCharState == ESC_CHAR) {
                         t = Token(ESCAPED_CHARACTER, file.substr(tokenStart + 1, i - tokenStart - 1));
                     } else {
@@ -315,9 +325,6 @@ Token Tokenizer::next() {
     return t;
 }
 
-/**
- * @brief Reflecting on C++
- */
 const char* tokenTypeName(TokenType t) {
     switch (t) {
         case UNKNOWN: return "UNKNOWN";
@@ -338,6 +345,7 @@ const char* tokenTypeName(TokenType t) {
         case DIVIDE: return "DIVIDE";
         case PLUS: return "PLUS";
         case MINUS: return "MINUS";
+        case CARET: return "CARET";
         case STRING: return "STRING";
         case DOUBLE_QUOTE: return "DOUBLE_QUOTE";
         case SINGLE_QUOTE: return "SINGLE_QUOTE";

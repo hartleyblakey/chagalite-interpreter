@@ -4,11 +4,11 @@ CXXFLAGS := -std=c++20 -O0 -Wall -Wextra -g -I "../src"
 
 BUILD = build
 
-OBJECTS = $(BUILD)/tokenize.o $(BUILD)/comments.o
+OBJECTS = $(BUILD)/tokenize.o $(BUILD)/comments.o $(BUILD)/cst.o
 
 LIB_SOURCE = ../src
 
-all: $(BUILD)/tokenize
+all: $(BUILD)/cst
 
 $(BUILD):
 	mkdir -p $@
@@ -16,7 +16,7 @@ $(BUILD):
 $(BUILD)/%.o: $(LIB_SOURCE)/%.cpp $(LIB_SOURCE)/%.hpp | $(BUILD)
 	g++ -o $@ $< -c $(CXXFLAGS)
 
-$(BUILD)/tokenize: $(OBJECTS) main.cpp | $(BUILD)
+$(BUILD)/cst: $(OBJECTS) main.cpp | $(BUILD)
 	g++ -o $@ main.cpp $(BUILD)/*.o $(CXXFLAGS)
 
 clean:

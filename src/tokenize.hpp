@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <deque>
+#include <format>
 
 enum TokenType {
     UNKNOWN,
@@ -28,6 +29,7 @@ enum TokenType {
     DIVIDE,
     PLUS,
     MINUS,
+    CARET,
 
     STRING,
     DOUBLE_QUOTE,
@@ -114,8 +116,11 @@ class Tokenizer {
     std::string error;
 
     // When the tokenizer reaches the end of a string, it emits two tokens at once
-    // (string and quote). If type != UNKNOWN, return this instead of scanning
-    Token pending;
+    // (string and quote). If this is not empty, next() returns pending.front().
+    // deque needed for peek(), which is used in the CST parser. Otherwise single
+    // pending token would work. push_front() used in peek implementation prevents
+    // using std::queue instead.
+    std::deque<Token> pending;
 
 public:
     Tokenizer() = delete;
@@ -125,7 +130,7 @@ public:
         tokenStart = 0;
         i = 0;
         line = 1;
-        pending = Token(UNKNOWN);
+        pending = {};
     }
 
     
@@ -136,6 +141,13 @@ public:
      * @return The next token, with type END if there are no more tokens to read
      */
     Token next();
+
+    /**
+     * @brief Function to peek at the next value of next().
+     * 
+     * @return The token that will be retrieved by a subsequent call to next()
+     */
+    Token peek();
 
     /**
      * @brief Check if the tokenizer has encountered an error while parsing
@@ -151,7 +163,22 @@ public:
      * @return the error string
      */
     std::string getError();
+
+    size_t getLine() { return line; }
+
 };
+
+template <>
+struct std::formatter<TokenType> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    auto format(const TokenType& obj, std::format_context& ctx) const {
+        return std::format_to(ctx.out(), "{}", tokenTypeName(obj));
+    }
+};
+
 
 
 #endif /* TOKENIZE_HPP */
