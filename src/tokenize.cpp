@@ -360,6 +360,6 @@ const char* tokenTypeName(TokenType t) {
         case BOOLEAN_NOT: return "BOOLEAN_NOT";
         case CHAR: return "CHAR";
         case ESCAPED_CHARACTER: return "ESCAPED_CHARACTER";
-        default: return "UNREACHABLE";
+        default: printf("Unreachable: invalid token type, no name"); exit(1);
     }
 }
