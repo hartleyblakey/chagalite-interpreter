@@ -1,7 +1,7 @@
 procedure   fizzbuzz   (   int   counter   )
 {
 int   state   ;
-state   =    0   ;
+state   =   0   ;
 if   (   (   counter   %   3   )   ==   0   )
 {
 state   =   1   ;

@@ -16,7 +16,7 @@ else
 {
 if   (   (   hex_digit   >=   '   A   '   )   &&   (   hex_digit   <=   '   F   '   )   )
 {
-digit   =   hex_digit   -   '   A   '   +   10   ; 
+digit   =   hex_digit   -   '   A   '   +   10   ;
 }
 }
 }
@@ -25,7 +25,7 @@ return   digit   ;
 procedure   main   (   void   )
 {
 char   hexnum   [   9   ]   ;
-int    i   ,   digit   ,   number   ; 
+int   i   ,   digit   ,   number   ;
 number   =   0   ;
 hexnum   =   "   feed\x0   "   ;
 digit   =   0   ;

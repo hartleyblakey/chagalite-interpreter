@@ -16,6 +16,37 @@ std::string Tokenizer::getError() {
     return error;
 }
 
+std::string Tokenizer::getCurrentLine() {
+    if (i == file.length()) {
+        return std::to_string(line) + std::string(": EOF");
+    }
+    size_t line_start = i;
+    size_t line_end = line_start;
+    printf("i: %ld, len: %ld\n", i, file.length());
+    while (line_start > 0 && file[line_start] != '\n')
+        line_start--;
+    line_start++;
+
+    while (line_end < file.length() && file[line_end] != '\n')
+        line_end++;
+    if (file[line_end] == '\n') {
+        line_end--;
+    }
+    
+    std::string line_num = std::to_string(line);
+    std::string line_pointer;
+    for (size_t j = 1; j < (line_num.length() + 2) + (i - line_start); j++) {
+        line_pointer += ' ';
+    }
+    line_pointer += '^';
+
+    return std::format("{}: {}\n{}\n",
+        line_num,
+        file.substr(line_start, line_end - line_start),
+        line_pointer
+    );
+}
+
 std::string syntaxError(size_t line, std::string reason) {
     return std::string("Syntax error on line ") + std::to_string(line) + ": " + reason;
 }
@@ -152,6 +183,8 @@ Token Tokenizer::next() {
                     pending.push_back(Token(SINGLE_QUOTE, file.substr(i, 1)));
                     if (stringCharState == ESC_CHAR) {
                         t = Token(ESCAPED_CHARACTER, file.substr(tokenStart + 1, i - tokenStart - 1));
+                    } else if (stringCharState == REG_CHAR) {
+                        t = Token(CHARACTER, file.substr(tokenStart + 1, i - tokenStart - 1));
                     } else {
                         t = Token(STRING, file.substr(tokenStart + 1, i - tokenStart - 1));
                     }
@@ -358,7 +391,7 @@ const char* tokenTypeName(TokenType t) {
         case BOOLEAN_AND: return "BOOLEAN_AND";
         case BOOLEAN_OR: return "BOOLEAN_OR";
         case BOOLEAN_NOT: return "BOOLEAN_NOT";
-        case CHAR: return "CHAR";
+        case CHARACTER: return "CHARACTER";
         case ESCAPED_CHARACTER: return "ESCAPED_CHARACTER";
         default: printf("Unreachable: invalid token type, no name"); exit(1);
     }

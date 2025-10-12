@@ -46,7 +46,7 @@ enum TokenType {
     BOOLEAN_OR,
     BOOLEAN_NOT,
 
-    CHAR,
+    CHARACTER,
     ESCAPED_CHARACTER,
 };
 
@@ -133,6 +133,12 @@ public:
         pending = {};
     }
 
+    /**
+     * @brief Get the contents of the current line
+     * 
+     * @return std::string
+     */
+    std::string getCurrentLine();
     
 
     /**

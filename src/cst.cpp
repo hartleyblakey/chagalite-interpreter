@@ -33,432 +33,982 @@ bool Cst::notReservedWord(Token t) {
          "for", "while", "if");
 }
 
-CstNode* Cst::parse_block() {
-    return nullptr;
-}
-
-
-
-
-CstNode* Cst::parse_return() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_declaration() {
-    if (!isDatatypeSpecifier(t)) {
-        return nullptr;
+//L_BRACE> <COMPOUND_STATEMENT> <R_BRACE> | <L_BRACE> <R_BRACE>
+bool Cst::parse_block() {
+    if (t.type != L_BRACE) {
+        return false;
     }
+    advance_child();
 
-    CstNode* decl = new CstNode(DECLARATION_STATEMENT);
+    parse_compound();
 
-    while (isDatatypeSpecifier(t) && t.type != END) {
-        decl->add_child(new CstNode(CST_TOKEN, t));
-        advance();
+    expect_child(R_BRACE);
 
-        expect(IDENTIFIER);
-        expect(notReservedWord, "reserved word \"{}\" cannot be used as a variable name", t.content);
-        decl->add_child(new CstNode(CST_TOKEN, t));
-        advance();
+    return true;
+}
 
-        if (t.type != COMMA) {
-            break;
+/*
+return <EXPRESSION> <SEMICOLON>
+return <SINGLE_QUOTED_STRING> <SEMICOLON>
+return <DOUBLE_QUOTED_STRING> <SEMICOLON>
+*/
+bool Cst::parse_return() {
+    if (t.type != IDENTIFIER || t.content != "return") {
+        return false;
+    }
+    advance_child(); // return
+
+    if (!parse_expression()) {
+        if (t.type != SINGLE_QUOTE && t.type != DOUBLE_QUOTE) {
+            syntaxError("Functions can only return expressions or strings");
         }
-        decl->add_child(new CstNode(CST_TOKEN, t));
-        advance();
+        TokenType quoteType = t.type;
+        advance_sibling();
+        expect_sibling(STRING);
+        expect_sibling(quoteType);
     }
-
-    expect(SEMICOLON);
-    decl->add_child(new CstNode(CST_TOKEN, t));
-    advance();
-    
-    return nullptr;
+    expect_sibling(SEMICOLON);
+    return true;
 }
 
-CstNode* Cst::parse_call() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_call_statement() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_sizeof() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_getchar() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_printf() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_assignment() {
-    if (t.type != IDENTIFIER) {
-        return nullptr;
-    }
-
-    CstNode* assignment = new CstNode(ASSIGNMENT_STATEMENT);
-
-    expect(notReservedWord, "Cannot assign to reserved word {}", t.content);
-    assignment->add_child(new CstNode(CST_TOKEN, t));
-    advance();
-
-    if (t.type == L_BRACKET) {
-        assignment->add_child(new CstNode(CST_TOKEN, t));
-        advance();
-
-        CstNode* expr = parse_numerical_expression();
-        if (!expr) {
-            syntaxError("Invalid array index");
-        } else {
-            assignment->add_child(expr);
-        }
-
-        expect(R_BRACKET);
-        assignment->add_child(new CstNode(CST_TOKEN, t));
-        advance();
-    }
-
-    expect(ASSIGNMENT_OPERATOR);
-    assignment->add_child(new CstNode(CST_TOKEN, t));
-    advance();
-
-    if (t.type == IDENTIFIER) {
-        expect(notReservedWord, "attempted to take value of reserved word {}", t.content);
-        assignment->add_child(new CstNode(CST_TOKEN, t));
-        advance();
-    } else if ((t.type == SINGLE_QUOTE || t.type == DOUBLE_QUOTE) && tk->peek().type == ESCAPED_CHARACTER) {
-        auto quoteType = t.type;
-        assignment->add_child(new CstNode(CST_TOKEN, t));
-        advance();
-
-        assignment->add_child(new CstNode(CST_TOKEN, t));
-        advance();
-
-        expect(quoteType);
-        assignment->add_child(new CstNode(CST_TOKEN, t));
-        advance();
-    } else if (t.type == SINGLE_QUOTE || t.type == DOUBLE_QUOTE) {
-        auto quoteType = t.type;
-        assignment->add_child(new CstNode(CST_TOKEN, t));
-        advance();
-
-        expect(STRING);
-        assignment->add_child(new CstNode(CST_TOKEN, t));
-        advance();
-
-        expect(quoteType);
-        assignment->add_child(new CstNode(CST_TOKEN, t));
-        advance();
-    } else {
-        // must be an expression
-        CstNode* expr = parse_expression();
-        if (!expr) {
-            syntaxError("invalid assignment, expecting expression");
-        } else {
-            assignment->add_child(expr);
-        }
-    }
-
-    expect(SEMICOLON);
-    assignment->add_child(new CstNode(CST_TOKEN, t));
-    advance();
-    return assignment;
-}
-
-CstNode* Cst::parse_iteration() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_selection() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_iteration_assignment() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_expression() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_initialization() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_boolean_expression() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_numerical_expression() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_relational_expression() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_numerical_operand() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_identifier_and_ident_arr_param_list_decl() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_identifier_and_ident_arr_param_list() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_identifier_and_ident_arr_list() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_identifier_arr_list() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_identifier_list() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_single_quoted_string() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_double_quoted_string() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_string() {
-    return nullptr;
-}
-
-
-
-CstNode* Cst::parse_statement() {
-    return parse_first_accepted({
-        &Cst::parse_declaration, 
-        &Cst::parse_assignment, 
-        &Cst::parse_iteration, 
-        &Cst::parse_return, 
-        &Cst::parse_call_statement, 
-        &Cst::parse_printf, 
-        &Cst::parse_selection
-    });
-}
-
-CstNode* Cst::parse_compound() {
-    CstNode* compound = new CstNode(COMPOUND_STATEMENT);
-    while (CstNode* next = parse_statement()) {
-        compound->add_child(next);
-    }
-    return compound;
-}
-
-
-bool Cst::parse_parameter_decl(CstNode* params) {
-    if (!isDatatypeSpecifier(t)) {
+bool Cst::parse_declaration() {
+    if (!isDatatypeSpecifier(t) || tk->peek().type != IDENTIFIER) {
         return false;
     }
 
-    params->add_child(new CstNode(CST_TOKEN, t));
-    advance();
-
-    expect(IDENTIFIER, "Expected an identifier following a datatype in a parameter list");
-    expect(notReservedWord, "reserved word \"{}\" cannot be used for the name of a variable", t.content);
-    params->add_child(new CstNode(CST_TOKEN, t));
-    advance();
+    advance_child(); // data type
+    if (!parse_identifier_and_ident_arr_list()) {
+        syntaxError("empty declarations not allowed");
+    }
+    expect_sibling(SEMICOLON);
     
-    if (t.type == L_BRACKET) {   
-        params->add_child(new CstNode(CST_TOKEN, t));
-        advance();
+    return true;
+}
 
-        expect(INTEGER, "Expected integer inside array braces, got {}", t.content);
-        params->add_child(new CstNode(CST_TOKEN, t));
-        advance();
+/*
+<IDENTIFIER> <L_PAREN> <IDENTIFIER_AND_IDENTIFIER_ARRAY_PARAMETER_LIST> <R_PAREN>
+<IDENTIFIER> <L_PAREN> <EXPRESSION> <R_PAREN>
+*/
+bool Cst::parse_call() {
+    if (t.type != IDENTIFIER || tk->peek().type != L_PAREN) {
+        return false;
+    }
 
-        expect(R_BRACKET, "Expected closing array brace, got {}", t.content);
-        params->add_child(new CstNode(CST_TOKEN, t));
-        advance();
+    advance_sibling();
+    advance_sibling();
+
+    if (!parse_identifier_and_ident_arr_param_list() && !parse_expression()) {
+        syntaxError("Expected param list or expression in function call");
+    }
+
+    expect_sibling(R_PAREN);
+
+    return true;
+}
+
+/*
+<IDENTIFIER> <L_PAREN> <IDENTIFIER_AND_IDENTIFIER_ARRAY_PARAMETER_LIST> <R_PAREN>
+<IDENTIFIER> <L_PAREN> <EXPRESSION> <R_PAREN>
+*/
+bool Cst::parse_call_statement() {
+    if (t.type != IDENTIFIER || tk->peek().type != L_PAREN) {
+        return false;
+    }
+    advance_child();
+    advance_sibling();
+    parse_identifier_and_ident_arr_param_list() || parse_expression();
+    expect_sibling(R_PAREN);
+    expect_sibling(SEMICOLON);
+    return true;
+}
+
+bool Cst::parse_sizeof() {
+    if (t.type != IDENTIFIER || t.content != "sizeof") {
+        return false;
+    }
+    advance_child();
+    expect_sibling(L_PAREN);
+    expect_sibling(IDENTIFIER);
+    expect_sibling(R_PAREN);
+    return true;
+}
+
+bool Cst::parse_getchar() {
+    if (t.type != IDENTIFIER || t.content != "getchar") {
+        return false;
+    }
+    advance_child();
+    expect_sibling(L_PAREN);
+    expect("void", "getchar must be called with argument 'void'");
+    expect_sibling(IDENTIFIER);
+    expect_sibling(R_PAREN);
+    return true;
+}
+
+/*
+printf <L_PAREN> <DOUBLE_QUOTED_STRING> <R_PAREN> <SEMICOLON>
+printf <L_PAREN> <SINGLE_QUOTED_STRING> <R_PAREN> <SEMICOLON>
+printf <L_PAREN> <DOUBLE_QUOTED_STRING> <COMMA> <IDENTIFIER_AND_IDENTIFIER_ARRAY_PARAMETER_LIST> <R_PAREN> <SEMICOLON>
+printf <L_PAREN> <SINGLE_QUOTED_STRING> <COMMA> <IDENTIFIER_AND_IDENTIFIER_ARRAY_PARAMETER_LIST> <R_PAREN> <SEMICOLON>
+*/
+bool Cst::parse_printf() {
+    if (t.type != IDENTIFIER || t.content != "printf") {
+        return false;
+    }
+
+    advance_child(); // printf
+    expect_sibling(L_PAREN);
+
+    if ((t.type == SINGLE_QUOTE || t.type == DOUBLE_QUOTE) && tk->peek().type == STRING) {
+        auto quoteType = t.type;
+        advance_sibling(); // quote
+        advance_sibling(); // string
+        expect_sibling(quoteType); // end quote
+    } else {
+        syntaxError("printf statement must have a format string");
+    }
+
+    if (t.type == COMMA) {
+        advance_sibling();
+        parse_identifier_and_ident_arr_param_list();
+    }
+
+    expect_sibling(R_PAREN);
+    expect_sibling(SEMICOLON);
+
+    return true;
+}
+
+bool Cst::parse_assignment() {
+    if (t.type != IDENTIFIER || isDatatypeSpecifier(t)) {
+        return false;
+    }
+
+    expect(notReservedWord, "Cannot assign to reserved word {}", t.content);
+    advance_child();
+
+    if (t.type == L_BRACKET) {
+        advance_sibling();
+
+        if (!parse_numerical_expression()) {
+            syntaxError("Invalid array index");
+        }
+        expect_sibling(R_BRACKET);
+    }
+
+    expect_sibling(ASSIGNMENT_OPERATOR);
+    if ((t.type == SINGLE_QUOTE || t.type == DOUBLE_QUOTE) && tk->peek().type == STRING)  {
+        auto quoteType = t.type;
+        advance_sibling(); // quote
+        expect_sibling(STRING); // escaped char
+        expect_sibling(quoteType); // end quote
+    } else if (parse_expression()) {
+        DEBUG_PRINT("Assigned to expression");
+    } else if (t.type == IDENTIFIER) {
+        expect(notReservedWord, "attempted to take value of reserved word {}", t.content);
+        advance_sibling();
+    } else if ((t.type == SINGLE_QUOTE || t.type == DOUBLE_QUOTE) && tk->peek().type == ESCAPED_CHARACTER) {
+        auto quoteType = t.type;
+        advance_sibling(); // quote
+        advance_sibling(); // escaped char
+        expect_sibling(quoteType); // end quote
+    } else {
+        syntaxError("invalid assignment");
+    }
+
+    expect_sibling(SEMICOLON);
+
+    return true;
+}
+
+/*
+for     <L_PAREN> <INITIALIZATION_EXPRESSION> <SEMICOLON> <BOOLEAN_EXPRESSION> <SEMICOLON> <ITERATION_ASSIGNMENT> <R_PAREN> <STATEMENT>
+for     <L_PAREN> <INITIALIZATION_EXPRESSION> <SEMICOLON> <BOOLEAN_EXPRESSION> <SEMICOLON> <ITERATION_ASSIGNMENT> <R_PAREN> <BLOCK_STATEMENT>
+while   <L_PAREN> <BOOLEAN_EXPRESSION> <R_PAREN> <STATEMENT>
+while   <L_PAREN> <BOOLEAN_EXPRESSION> <R_PAREN> <BLOCK_STATEMENT>
+*/
+bool Cst::parse_iteration() {
+    if (t.type != IDENTIFIER) {
+        return false;
+    }
+
+    if (t.content == "for") {
+        advance_child();
+        expect_sibling(L_PAREN);
+        parse_initialization();
+        expect_sibling(SEMICOLON);
+        parse_boolean_expression();
+        expect_sibling(SEMICOLON);
+        parse_iteration_assignment();
+        expect_sibling(R_PAREN);
+        if (!parse_block() && !parse_statement()) {
+            syntaxError("Expected expression or block after for loop");
+        }
+    } else if (t.content == "while") {
+        advance_child();
+        expect_sibling(L_PAREN);
+        parse_boolean_expression();
+        expect_sibling(R_PAREN);
+        if (!parse_block() && !parse_statement()) {
+            syntaxError("Expected expression or block after while loop");
+        }
+    } else {
+        return false;
+    }
+
+
+    return true;
+}
+
+/*
+if <L_PAREN> <BOOLEAN_EXPRESSION> <R_PAREN> <STATEMENT> | 
+if <L_PAREN> <BOOLEAN_EXPRESSION> <R_PAREN> <BLOCK_STATEMENT> | 
+
+if <L_PAREN> <BOOLEAN_EXPRESSION> <R_PAREN> <STATEMENT> else <STATEMENT> | 
+if <L_PAREN> <BOOLEAN_EXPRESSION> <R_PAREN> <STATEMENT> else <BLOCK_STATEMENT>
+
+if <L_PAREN> <BOOLEAN_EXPRESSION> <R_PAREN> <BLOCK_STATEMENT> else <STATEMENT> | 
+if <L_PAREN> <BOOLEAN_EXPRESSION> <R_PAREN> <BLOCK_STATEMENT> else <BLOCK_STATEMENT> | 
+
+*/
+bool Cst::parse_selection() {
+    if (t.type != IDENTIFIER || t.content != "if") {
+        return false;
+    }
+
+    advance_child();
+    expect_sibling(L_PAREN);
+
+    if (!parse_boolean_expression()) {
+        syntaxError("Expected boolean expression in 'if' statement");
+    }
+
+    expect_sibling(R_PAREN);
+
+    DEBUG_PRINT("before if block");
+    if (!parse_block() && !parse_statement()) {
+        syntaxError("Expected statement in 'if' block");
+    }
+    DEBUG_PRINT("after if block");
+
+    if (t.type != IDENTIFIER || t.content != "else") {
+        return true;
+    }
+
+    advance_child(); // else
+
+
+    if (!parse_block() && !parse_statement()) {
+        syntaxError("Expected statement in 'else' block");
+    }
+
+    return true;
+}
+
+/*
+<IDENTIFIER> <ASSIGNMENT_OPERATOR> <EXPRESSION>
+<IDENTIFIER> <ASSIGNMENT_OPERATOR> <SINGLE_QUOTED_STRING>
+<IDENTIFIER> <ASSIGNMENT_OPERATOR> <DOUBLE_QUOTED_STRING>
+*/
+bool Cst::parse_iteration_assignment() {
+    if (t.type != IDENTIFIER || tk->peek().type != ASSIGNMENT_OPERATOR) {
+        return false;
+    }
+    
+    advance_sibling();
+    advance_sibling();
+
+    if (!parse_expression()) {
+        if ((t.type == SINGLE_QUOTE || t.type == DOUBLE_QUOTE) && tk->peek().type == STRING) {
+            auto quoteType = t.type;
+            advance_sibling(); // quote
+            advance_sibling(); // string
+            expect_sibling(quoteType); // end quote
+        } else {
+            syntaxError("iteration assignment value must be string or expression");
+        }
     }
 
     return true;
 }
 
 
-CstNode* Cst::parse_parameters() {
-    
-    
-    if (!isDatatypeSpecifier(t)) {
-        return nullptr;
+/*
+<IDENTIFIER> <ASSIGNMENT_OPERATOR> <EXPRESSION>
+<IDENTIFIER> <ASSIGNMENT_OPERATOR> <SINGLE_QUOTED_STRING>
+<IDENTIFIER> <ASSIGNMENT_OPERATOR> <DOUBLE_QUOTED_STRING>
+*/
+bool Cst::parse_initialization() {
+    return parse_iteration_assignment();
+}
+
+
+bool Cst::parse_expression() {
+
+    if (any(t, "TRUE", "FALSE", BOOLEAN_NOT) || t.type == L_PAREN && any(tk->peek(), "TRUE", "FALSE", BOOLEAN_NOT)) {
+        return parse_boolean_expression();
     }
 
-    CstNode* params = new CstNode(PARAMETER_LIST);
+    bool parenthesised = false;
+    if (t.type == L_PAREN) {
+        parenthesised = true;
+        advance_sibling(); // '('
+    }
+
+    if (parse_numerical_expression()) {
+        DEBUG_PRINT("numeric");
+        if (parenthesised && t.type == R_PAREN) {
+            advance_sibling();
+            parenthesised = false;
+        }
+        if (parse_relational_expression()) {
+            if (!parse_numerical_expression()) {
+                syntaxError("Expected numerical expression on rhs of relational operator");
+            }
+            if (parenthesised && t.type == R_PAREN) {
+                advance_sibling();
+                parenthesised = false;
+            }
+            // <num expr> <rel op> <num expr>
+            if (isBooleanOperator(t)) {
+                if (!parse_boolean_expression()) {
+                    syntaxError("Expected boolean expression after boolean operator");
+                }
+                // <num expr> <rel op> <num expr> <bool op> <bool expr>
+            }
+        }
+        if (parenthesised) {
+            expect_sibling(R_PAREN);
+        }
+    } else {
+        DEBUG_PRINT("trying boolean");
+        if (!parenthesised) {
+            return parse_boolean_expression();
+        }   
+        if (!parse_boolean_expression()) {
+            syntaxError("Expected expression in parenthesis");
+        }
+        DEBUG_PRINT("boolean");
+        expect_sibling(R_PAREN);
+
+        if (isBooleanOperator(t)) {
+            advance_sibling();
+            if (!parse_boolean_expression()) {
+                syntaxError("Expected boolean expression after boolean operator");
+            }
+        }
+    }
+
+    return true;
+}
+
+/*
+                        <NUMERICAL_OPERAND> | 
+<L_PAREN> 				<NUMERICAL_OPERAND> 	<R_PAREN> |
+                        <NUMERICAL_OPERAND> 	<NUMERICAL_OPERATOR> 	                <NUMERICAL_EXPRESSION> |
+<L_PAREN> 				<NUMERICAL_OPERAND> 	<NUMERICAL_OPERATOR> 	                <NUMERICAL_EXPRESSION> <R_PAREN> |
+                        <NUMERICAL_OPERAND> 	<NUMERICAL_OPERATOR> 	<L_PAREN> 		<NUMERICAL_EXPRESSION> <R_PAREN> <NUMERICAL_OPERATOR> <NUMERICAL_EXPRESSION> |
+<L_PAREN> 				<NUMERICAL_OPERAND> 	<NUMERICAL_OPERATOR> 	                <NUMERICAL_EXPRESSION> <R_PAREN> |
+                        <NUMERICAL_OPERAND> 	<NUMERICAL_OPERATOR> 	<L_PAREN> 		<NUMERICAL_EXPRESSION> <R_PAREN> |
+<L_PAREN> 				<NUMERICAL_OPERAND> 	<NUMERICAL_OPERATOR> 	                <NUMERICAL_EXPRESSION> <R_PAREN> <NUMERICAL_OPERATOR> <NUMERICAL_EXPRESSION> |
+                        <NUMERICAL_OPERATOR> 	<NUMERICAL_EXPRESSION>
+*/
+bool Cst::parse_numerical_expression() {
+    if (isNumericalOperator(t)) {
+        advance_sibling();
+        if (!parse_numerical_expression()) {
+            syntaxError("Expected numerical expression after numerical operator");
+        }
+    } else if (tk->peek().type != BOOLEAN_NOT) {
+        bool expecting_parenthesis = false;
+        if (t.type == L_PAREN) {
+            expecting_parenthesis = true;
+            DEBUG_PRINT("parenthesis");
+            advance_sibling();
+        }
+    
+        if (!parse_numerical_operand()) {
+            if (expecting_parenthesis) {
+                syntaxError("Expected numerical operand in numerical expression");
+            } else {
+                return false;
+            }
+            
+        }
+    
+        if (t.type == R_PAREN) {
+            if (!expecting_parenthesis) {
+                return true;
+            }
+            DEBUG_PRINT("found closing");
+            expecting_parenthesis = false;
+            advance_sibling();
+
+        } else {
+            if (!isNumericalOperator(t)) {
+                if (expecting_parenthesis) {
+                    syntaxError("failed to find closing parenthesis in numerical expression");
+                }
+                // just a single operand
+                return true;
+            }
+
+            advance_sibling();
+
+            if (t.type == L_PAREN) {
+                if (expecting_parenthesis) {
+                    syntaxError("Unexpected L_PAREN");
+                }
+                expecting_parenthesis = true;
+                advance_sibling();
+            }
+
+            if (!parse_numerical_expression()) {
+                syntaxError("Expected numerical expression");
+            }
+
+            if (expecting_parenthesis) {
+                expect_sibling(R_PAREN);
+                DEBUG_PRINT("found closing");
+                expecting_parenthesis = false;
+            }
+
+            if (isNumericalOperator(t)) {
+                advance_sibling();
+
+                if (!parse_numerical_expression()) {
+                    syntaxError("Expected numerical expression");
+                }
+            }
+        }
+
+        if (expecting_parenthesis) {
+            expect_sibling(R_PAREN);
+            DEBUG_PRINT("found closing");
+            expecting_parenthesis = false;
+        }
+
+    } else {
+        return false;
+    }
+
+    return true;
+}
+
+/*
+<BOOLEAN_TRUE> | <BOOLEAN_FALSE> | <IDENTIFIER> |
+<IDENTIFIER> <BOOLEAN_OPERATOR> <BOOLEAN_EXPRESSION> | 
+<BOOLEAN_NOT> <BOOLEAN_TRUE> | 
+<BOOLEAN_NOT> <BOOLEAN_FALSE> | 
+<BOOLEAN_NOT> <IDENTIFIER> | 
+<USER_DEFINED_FUNCTION> | 
+<USER_DEFINED_FUNCTION> <BOOLEAN_OPERATOR> <BOOLEAN_EXPRESSION> | 
+<BOOLEAN_NOT> <USER_DEFINED_FUNCTION> | 
+<L_PAREN> <USER_DEFINED_FUNCTION> <R_PAREN> | 
+<L_PAREN> <IDENTIFIER> <BOOLEAN_OPERATOR> <BOOLEAN_EXPRESSION> <R_PAREN> | 
+<NUMERICAL_EXPRESSION> <RELATIONAL_EXPRESSION> <NUMERICAL_EXPRESSION> | 
+<L_PAREN> <NUMERICAL_OPERAND> <RELATIONAL_EXPRESSION> <NUMERICAL_OPERAND> <R_PAREN> |
+<L_PAREN> <NUMERICAL_OPERAND> <RELATIONAL_EXPRESSION> <NUMERICAL_OPERAND> <R_PAREN> <BOOLEAN_OPERATOR> <BOOLEAN_EXPRESSION> |
+<L_PAREN> <BOOLEAN_NOT> <IDENTIFIER> <R_PAREN> | 
+<L_PAREN> <BOOLEAN_NOT> <IDENTIFIER> <BOOLEAN_OPERATOR> <BOOLEAN_EXPRESSION> <R_PAREN> |
+<L_PAREN> <BOOLEAN_NOT> <USER_DEFINED_FUNCTION> <R_PAREN> |
+<L_PAREN> <BOOLEAN_NOT> <USER_DEFINED_FUNCTION> <R_PAREN> <BOOLEAN_OPERATOR> <BOOLEAN_EXPRESSION> | 
+<L_PAREN> <NUMERICAL_OPERAND> <RELATIONAL_EXPRESSION> <NUMERICAL_EXPRESSION> <R_PAREN>
+*/
+bool Cst::parse_boolean_expression() {
+    
+
+     bool parenthesized = false;
+
+    if (t.type == INTEGER && !isRelationalExpression(tk->peek())) {
+        return false;
+    }
+
+
+    DEBUG_PRINT("start");
+
+    if (t.type == L_PAREN && tk->peek().type == IDENTIFIER) {
+        DEBUG_PRINT("parsing as (x");
+        parenthesized = true;
+        advance_sibling();
+
+        if (isBooleanOperator(tk->peek())) {
+            advance_sibling();
+            parse_boolean_expression();
+            expect_sibling(R_PAREN);
+            return true;
+        } else if (parse_call()) {
+            expect_sibling(R_PAREN);
+            return true;
+        }
+    }
+
+    if (parenthesized && t.type == IDENTIFIER && isRelationalExpression(tk->peek())) {
+        // parse as 
+        // <L_PAREN> <NUMERICAL_OPERAND> <RELATIONAL_EXPRESSION> <NUMERICAL_OPERAND> <R_PAREN>
+        // <L_PAREN> <NUMERICAL_OPERAND> <RELATIONAL_EXPRESSION> <NUMERICAL_OPERAND> <R_PAREN> <BOOLEAN_OPERATOR> <BOOLEAN_EXPRESSION>
+
+        parse_numerical_operand();
+        parse_relational_expression();
+        parse_numerical_operand();
+
+        expect_sibling(R_PAREN);
+
+        if (isBooleanOperator(t)) {
+            advance_sibling();
+            parse_boolean_expression();
+        }
+
+        return true;
+    }
+
+    if (!isBooleanLiteral(t) && parse_numerical_expression()) {
+        DEBUG_PRINT("parsed as numerical expr");
+        if (parenthesized && t.type == R_PAREN) {
+            advance_sibling();
+            parenthesized = false;
+        }
+        expect(isRelationalExpression, "Expected relational operator after numerical expression, found {}", t.content);
+        advance_sibling();
+        if (!parse_numerical_expression()) {
+            syntaxError("Expected numerical expression after relational operator");
+        }
+        DEBUG_PRINT("parsed numerical expression 123");
+        if (parenthesized) {
+            expect_sibling(R_PAREN);
+        }
+        return true;
+    }
+
+   
+    if (t.type == L_PAREN) {
+        parenthesized = true;
+        advance_sibling();
+    }
+
+    bool negated = false;
+    if (t.type == BOOLEAN_NOT) {
+        negated = true;
+        advance_sibling();
+    }
+
+    if (isBooleanLiteral(t)) {
+        DEBUG_PRINT("parsing boolean literal");
+        advance_sibling();
+        if (parenthesized) {
+             expect_sibling(R_PAREN);
+        }
+
+        return true;
+    }
+
+    if (parse_call()) {
+        DEBUG_PRINT("parsing call");
+        if (parenthesized) {
+            expect_sibling(R_PAREN);
+        }
+
+        if (isBooleanOperator(t)) {
+            advance_sibling();
+            if (!parse_boolean_expression()) {
+                syntaxError("Expected boolean expression");
+            }
+        }
+
+        return true;
+    }
+
+    if (t.type == IDENTIFIER) {
+        DEBUG_PRINT("ident");
+        advance_sibling();
+
+        if (isBooleanOperator(t)) {
+            advance_sibling();
+
+            if (!parse_boolean_expression()) {
+                syntaxError("Expected boolean expression");
+            }
+        }
+
+        if (parenthesized) {
+            DEBUG_PRINT("expected r_paren 1");
+            expect_sibling(R_PAREN);
+        }
+
+        return true;
+    }
+
+    if (parenthesized && parse_numerical_operand()) {
+        DEBUG_PRINT("parsing numerical operand");
+        expect(isRelationalExpression, "Expected relational operator after numerical operand, found {}", t.content);
+        advance_sibling();
+
+        if (parse_numerical_operand()) {
+            expect_sibling(R_PAREN);
+
+            // <BOOLEAN_OPERATOR> <BOOLEAN_EXPRESSION>
+            if (isBooleanOperator(t)) {
+                advance_sibling();
+
+                if (!parse_boolean_expression()) {
+                    syntaxError("expected boolean expression after boolean operator");
+                }
+            }
+
+        } else if (parse_numerical_expression()) {
+            expect_sibling(R_PAREN);
+        } else {
+            syntaxError("Expected numerical value after numerical operand + relational expression");
+        }
+
+        return true;
+    }
+
+ 
+    DEBUG_PRINT("failed");
+    return false;
+}
+
+
+
+bool Cst::parse_relational_expression() {
+    if (isRelationalExpression(t)) {
+        advance_sibling();
+        return true;
+    }
+    return false;
+}
+
+/*
+<IDENTIFIER> |
+<INTEGER> |
+<IDENTIFIER> <L_BRACKET> <NUMERICAL EXPRESSION> <R_BRACKET> |
+<GETCHAR_FUNCTION> | 
+<USER_DEFINED_FUNCTION> |
+<SINGLE_QUOTE> <CHARACTER> <SINGLE_QUOTE> | 
+<SINGLE_QUOTE> <ESCAPED_CHARACTER> <SINGLE_QUOTE> |
+<DOUBLE_QUOTE> <CHARACTER> <DOUBLE_QUOTE> |
+<DOUBLE_QUOTE> <ESCAPED_CHARACTER> <DOUBLE_QUOTE> |
+<SIZEOF_FUNCTION>
+*/
+bool Cst::parse_numerical_operand() {
+    bool basic = parse_first_accepted({
+        &Cst::parse_getchar,
+        &Cst::parse_sizeof,
+        &Cst::parse_call
+    });
+
+    if (basic) {
+        return true;
+    } 
+
+    if (any(t, INTEGER, IDENTIFIER)) {
+        advance_sibling();
+        if (t.type == L_BRACKET) {
+            advance_sibling();
+            if (!parse_numerical_expression()) {
+                syntaxError("invalid array index");
+            }
+            expect_sibling(R_BRACKET);
+        }
+        return true;
+    } else if (any(t, SINGLE_QUOTE, DOUBLE_QUOTE)) {
+        TokenType quote_type = t.type;
+
+        advance_sibling();
+
+        if (!any(t, ESCAPED_CHARACTER, CHARACTER)) {
+            if (t.type == END) {
+                syntaxError("unterminated string quote.");
+            } else {
+                syntaxError("expected character or escaped character in quotes");
+            }
+            
+        }
+
+        advance_sibling();
+
+        expect_sibling(quote_type);
+        return true;
+    }
+    
+    return false;
+}
+
+bool Cst::parse_identifier_and_ident_arr_param_list_decl() {
+    return false;
+}
+
+/*
+<IDENTIFIER>
+<IDENTIFIER> <L_BRACKET> <IDENTIFIER> <R_BRACKET> 
+<IDENTIFIER> <COMMA> <IDENTIFIER_AND_IDENTIFIER_ARRAY_PARAMETER_LIST>
+<IDENTIFIER> <L_BRACKET> <IDENTIFIER> <R_BRACKET> <COMMA> <IDENTIFIER_AND_IDENTIFIER_ARRAY_PARAMETER_LIST>
+<IDENTIFIER> <L_BRACKET> <NUMERICAL_EXPRESSION> <R_BRACKET>
+<IDENTIFIER> <L_BRACKET> <NUMERICAL_EXPRESSION> <R_BRACKET> <COMMA> <IDENTIFIER_AND_IDENTIFIER_ARRAY_PARAMETER_LIST>
+*/
+bool Cst::parse_identifier_and_ident_arr_param_list() {
+    if (t.type != IDENTIFIER) {
+        return false;
+    }
+    advance_sibling();
+
+    if (t.type == L_BRACKET) {
+        advance_sibling(); // l bracket
+        if (t.type == IDENTIFIER ) {
+            advance_sibling(); // ident
+        } else if (!parse_numerical_expression()) {
+            syntaxError("Invalid array index in parameter list");
+        }
+        expect_sibling(R_BRACKET);
+    }
+
+    if (t.type != COMMA) {
+        return true;
+    }
+
+    advance_sibling(); // comma
+
+    parse_identifier_and_ident_arr_param_list();
+
+    return true;
+}
+
+bool Cst::parse_identifier_and_ident_arr_list() {
+    if (t.type != IDENTIFIER) {
+        return false;
+    }
+    expect(notReservedWord, "reserved word \"{}\" cannot be used for the name of a variable.", t.content);
+    advance_sibling(); // ident
+    if (t.type == L_BRACKET) {
+        advance_sibling();
+        if (!t.content.empty() && t.content[0] == '-') {
+            syntaxError("array declaration size must be a positive integer.");
+        }
+        expect_sibling(INTEGER);
+        expect_sibling(R_BRACKET);
+    }
+
+    if (t.type == COMMA) {
+        advance_sibling();
+        parse_identifier_and_ident_arr_list();
+    }
+
+    return true;
+}
+
+bool Cst::parse_identifier_arr_list() {
+    return false;
+}
+
+bool Cst::parse_identifier_list() {
+    return false;
+}
+
+bool Cst::parse_single_quoted_string() {
+    return false;
+}
+
+bool Cst::parse_double_quoted_string() {
+    return false;
+}
+
+bool Cst::parse_string() {
+    return false;
+}
+
+
+
+bool Cst::parse_statement() {
+    return parse_first_accepted({
+        &Cst::parse_declaration, 
+        
+        &Cst::parse_printf, 
+        
+        &Cst::parse_selection,
+        &Cst::parse_iteration, 
+        &Cst::parse_return, 
+        &Cst::parse_call_statement, 
+        &Cst::parse_assignment, 
+    });
+}
+
+bool Cst::parse_compound() {
+    // std::cout << "compound start on line " << tk->getLine() << " with " << t.content << "\n";
+    while (parse_statement());
+    // std::cout << "compound end on line " << tk->getLine() << " with " << t.content << "\n";
+    return true;
+}
+
+bool Cst::parse_parameter_decl() {
+    if (!isDatatypeSpecifier(t)) {
+        return false;
+    }
+
+    advance_sibling();
+
+    expect(notReservedWord, "reserved word \"{}\" cannot be used for the name of a variable.", t.content);
+    expect_sibling(IDENTIFIER);
+    
+    if (t.type == L_BRACKET) {   
+        advance_sibling();
+        expect_sibling(INTEGER);
+        expect_sibling(R_BRACKET);
+    }
+
+    return true;
+}
+
+
+bool Cst::parse_parameters() {
+    if (!isDatatypeSpecifier(t)) {
+        return false;
+    }
 
     while (t.type != END) {
-        parse_parameter_decl(params);
+        if (!parse_parameter_decl()) {
+            syntaxError("Invalid parameter list");
+        }
 
         if (t.type == R_PAREN) {
             break;
         }
 
-        expect(COMMA, "Expected comma separated items in parameter list");
-        params->add_child(new CstNode(CST_TOKEN, t));
-        advance();
+        expect_sibling(COMMA);
     }
 
-    return params;
+    return true;
 }
 
-CstNode* Cst::parse_procedure() {
-    return nullptr;
-}
-
-CstNode* Cst::parse_function() {
-    
-    if (t.content != "function") {
-        return nullptr;
+bool Cst::parse_procedure() {
+    if (t.content != "procedure") {
+        return false;
     }
-    CstNode* function = new CstNode(FUNCTION_DECLARATION);
 
-    function->add_child(new CstNode(CST_TOKEN, t));
-    advance();
+    advance_child(); // procedure
 
-    expect(isDatatypeSpecifier, "Expected datatype specifier after function declaration");
-    function->add_child(new CstNode(CST_TOKEN, t));
-    advance();
+    expect(notReservedWord, "reserved word \"{}\" cannot be the name of a procedure", t.content);
+    expect_sibling(IDENTIFIER); // name
 
-    expect(IDENTIFIER, "Expected identifier after datatype specifier");
-    expect(notReservedWord, "reserved word \"{}\" cannot be the name of a function", t.content);
-    function->add_child(new CstNode(CST_TOKEN, t));
-    advance();
-
-    expect(L_PAREN, "Expected L_PAREN");
-    function->add_child(new CstNode(CST_TOKEN, t));
-    advance();
+    expect_sibling(L_PAREN);
 
     if (t.content == "void") {
-        function->add_child(new CstNode(CST_TOKEN, t));
-        advance();
+        advance_sibling();
     } else {
-        CstNode* params = parse_parameters();
-        if (!params) {
-            syntaxError("Empty parameter list not allowed");
-        } else {
-            function->add_child(params);
+        if (!parse_parameters()) {
+            syntaxError("Invalid procedure parameter list");
         }
     }
 
-    expect(R_PAREN);
-    function->add_child(new CstNode(CST_TOKEN, t));
-    advance();
+    expect_sibling(R_PAREN);
+
+    expect_child(L_BRACE);
+
+    parse_compound();
+
+    expect_child(R_BRACE);
+
+    return true;
+}
+
+bool Cst::parse_function() {
+    
+    if (t.content != "function") {
+        return false;
+    }
+
+    advance_child(); // function
 
 
-    expect(L_BRACE);
-    function->add_child(new CstNode(CST_TOKEN, t));
-    advance();
+    expect(isDatatypeSpecifier, "Expected datatype specifier after function declaration");
+    advance_sibling(); // return type
 
-    CstNode* body = parse_compound();
-    if (!body) {
+    
+    expect(notReservedWord, "reserved word \"{}\" cannot be used for the name of a function.", t.content);
+    expect_sibling(IDENTIFIER); // name
+
+    expect_sibling(L_PAREN);
+
+    if (t.content == "void") {
+        advance_sibling();
+    } else {
+        if (!parse_parameters()) {
+            syntaxError("Empty parameter list not allowed");
+        }
+    }
+
+    expect_sibling(R_PAREN);
+
+    expect_child(L_BRACE);
+
+    if (!parse_compound()) {
         syntaxError("Empty function body not allowed: must have a valid return");
     }
-    function->add_child(body);
 
+    expect_child(R_BRACE);
 
-    expect(R_BRACE);
-    function->add_child(new CstNode(CST_TOKEN, t));
-    advance();
-
-    return function;
+    return true;
 }
 
-CstNode* Cst::parse_program_tail() {
-    CstNode* next = nullptr;
-    next = parse_function();
-    if (!next) {
-        next = parse_declaration();
-    }
-    if (!next) {
-        next = parse_procedure();
+bool Cst::parse_program_tail() {
+    bool decl = parse_first_accepted({
+        &Cst::parse_function,
+        &Cst::parse_procedure,
+        &Cst::parse_declaration
+    });
+
+    if (decl) {
+        parse_program_tail();
     }
 
-    if (next) {
-        std::cout << "Another top level decl to check\n";
-        next->sib = parse_program_tail();
-    }
-
-    return next;
+    return true;
 }
 
-CstNode* Cst::parse_main() {
+bool Cst::parse_main() {
     if (t.content != "procedure" || tk->peek().content != "main") {
-        return nullptr;
+        return false;
     }
+    advance_child(); // procedure
+    advance_sibling(); // main
 
-    CstNode* mainProc = new CstNode(MAIN_PROCEDURE);
-
-    
-    mainProc->add_child(new CstNode(CST_TOKEN, t));
-    advance(); // main
-    mainProc->add_child(new CstNode(CST_TOKEN, t));
-    advance();
-
-    expect(L_PAREN, "Expected L_PAREN after 'procedure main', found {}", tokenTypeName(t.type));
-    mainProc->add_child(new CstNode(CST_TOKEN, t));
-    advance();
-
+    expect_sibling(L_PAREN);
     expect("void", "Main procedure must have parameter type 'void', has {}", t.content);
-    mainProc->add_child(new CstNode(CST_TOKEN, t));
-    advance();
+    advance_sibling();
 
-    expect(R_PAREN, "Expected R_PAREN after main parameter list, found {}", tokenTypeName(t.type));
-    mainProc->add_child(new CstNode(CST_TOKEN, t));
-    advance();
+    expect_sibling(R_PAREN);
 
-    auto block = parse_block();
-    if (!block) {
+    if (!parse_block()) {
         syntaxError("Expected valid block statement following main declaration");
     }
-    mainProc->add_child(block);
 
-    return mainProc;
+    return true;
 }
 
-CstNode* Cst::parse_program() {
+bool Cst::parse_program() {
 
-    if (expect(IDENTIFIER, "Expected valid program start, got \"{}\"", t.content)) {
-        CstNode* program = new CstNode(PROGRAM);
-        CstNode* next = nullptr;
-
-        while (t.type != END) {
-            next = parse_main();
-            if (next) {
-                program->add_child(next);
-                program->add_child(parse_program_tail());
-                break;
-            }
-
-            next = parse_function();
-            if (!next) {
-                next = parse_procedure();
-            }
-            if (!next) {
-                next = parse_declaration();
-            }
-            if (next) {
-                program->add_child(next);
-            } else {
-                break;
-            }
-        }
-        expect(END, "There should be no content after the end of the program");
-        return program;
+    if (t.type != IDENTIFIER) {
+        syntaxError("Programs should start with an identifier");
     }
+
+    while (t.type != END) {
+        if (parse_main()) {
+            parse_program_tail();
+            break;
+        }
+
+        bool decl = parse_first_accepted({
+            &Cst::parse_function,
+            &Cst::parse_procedure,
+            &Cst::parse_declaration
+        });
+
+        if (!decl) {
+            break;
+        }
+    }
+    expect(END, "There should be no content after the end of the program");
     
-    return nullptr;
+    return true;
 }
 
 
@@ -477,8 +1027,8 @@ void Cst::destroy() {
 
 
 void Cst::build() {
-    advance();
-    root = parse_program();
+    t = tk->next();
+    parse_program();
 }
 
 void printNode(CstNode* n) {
@@ -508,28 +1058,25 @@ void printCstNode(CstNode* n, int depth) {
         std::cout << "NULL NODE POINTER!!";
         return;
     }
+    while (n) {
+        if (!n->sib && !n->child) {
+            std::cout << n->t.content << "\n";
+            break;
+        }
+        while (n->sib) {
+            std::cout << n->t.content << "   ";
+            n = n->sib;
+        }
+        std::cout << n->t.content << "\n";
 
-    for (int i = 0; i < depth; i++) {
-        std::cout << " |-";
+        if (n->child) {
+            n = n->child;
+        }
     }
 
-    if (n->t.type != UNKNOWN) {
-        std::cout << n->t.content;
-    } else {
-        std::cout << "[CST NODE]";
-    }
-    
-    if (n->sib) {
-        std::cout << "\n";
-        printCstNode(n->sib, depth);
-    }
-    if (n->child) {
-        std::cout << "\n";
-        printCstNode(n->child, depth + 1);
-    }
+
 }
 
 void Cst::print() {
-    printCstNode(root, 0);
-    std::cout << "\n";
+    printCstNode(root->child, 0);
 }

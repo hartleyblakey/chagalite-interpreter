@@ -10,7 +10,7 @@ function   bool   empty_string   (   char   string   [   4096   ]   )
 {
 int   i   ;
 int   num_bytes_before_null   ;
-bool  found_null   ;
+bool   found_null   ;
 found_null   =   FALSE   ;
 num_bytes_before_null   =   0   ;
 i   =   0   ;

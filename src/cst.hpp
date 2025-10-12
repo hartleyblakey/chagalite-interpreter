@@ -6,76 +6,39 @@
 #include <vector>
 #include <string>
 #include <format>
+#include <cassert>
 
+#ifdef DEBUG
+#define DEBUG_PRINT(s) std::cout << s << " in " << __func__ << " seeing " << t.content << " --> " << tk->peek().content << " on line " << tk->getLine() << "\n"; 
+#else
+#define DEBUG_PRINT(s)
+#endif
 
-enum CstNodeType {
-    CST_TOKEN,
-    DOUBLE_QUOTED_STRING,
-    SINGLE_QUOTED_STRING,
-    IDENTIFIER_LIST,
-    IDENTIFIER_ARRAY_LIST,
-    IDENTIFIER_AND_IDENTIFIER_ARRAY_LIST,
-    IDENTIFIER_AND_IDENTIFIER_ARRAY_PARAMETER_LIST,
-    IDENTIFIER_AND_IDENTIFIER_ARRAY_PARAMETER_LIST_DECLARATION,
-    DATATYPE_SPECIFIER,
-    NUMERICAL_OPERAND,
-    NUMERICAL_OPERATOR,
-    BOOLEAN_OPERATOR,
-    RELATIONAL_EXPRESSION,
-    NUMERICAL_EXPRESSION,
-    BOOLEAN_EXPRESSION,
-    INITIALIZATION_EXPRESSION,
-    EXPRESSION,
-    ITERATION_ASSIGNMENT,
-    SELECTION_STATEMENT,
-    ITERATION_STATEMENT,
-    ASSIGNMENT_STATEMENT,
-    PRINTF_STATEMENT,
-    GETCHAR_FUNCTION,
-    SIZEOF_FUNCTION,
-    USER_DEFINED_FUNCTION,
-    USER_DEFINED_PROCEDURE_CALL_STATEMENT,
-    DECLARATION_STATEMENT,
-    RETURN_STATEMENT,
-    STATEMENT,
-    COMPOUND_STATEMENT,
-    BLOCK_STATEMENT,
-    PARAMETER_LIST,
-    FUNCTION_DECLARATION,
-    PROCEDURE_DECLARATION,
-    MAIN_PROCEDURE,
-    PROGRAM_TAIL,
-    PROGRAM,
-};
 
 struct CstNode {
     CstNode* child;
     CstNode* sib;
-    CstNodeType type;
     Token t;
 
-    CstNode (CstNodeType new_type) {
-        t = Token(UNKNOWN);
-        child = nullptr;
-        sib = nullptr;
-        type = new_type;
-    }
-    CstNode (CstNodeType new_type, Token tok) {
+    CstNode (Token tok) {
         t = tok;
         child = nullptr;
         sib = nullptr;
-        type = new_type;
     }
 
-    void add_child(CstNodeType t) {
+    void add_child(Token t) {
         CstNode* node = new CstNode(t);
         add_child(node);
     }
 
-    void add_child(CstNode* c) {
+    bool add_child(CstNode* c) {
+        if (!c) {
+            return false;
+        }
+
         if (!child) {
             child = c;
-            return;
+            return true;
         }
 
         CstNode* last = child;
@@ -83,6 +46,7 @@ struct CstNode {
             last = last->sib;
         }
         last->sib = c;
+        return true;
     }
 };
 
@@ -91,8 +55,8 @@ public:
     Cst() = delete;
     Cst(Tokenizer* tk) {
         this->tk = tk;
-        root = nullptr;
-        current = 0;
+        root = new CstNode(UNKNOWN);
+        current = root;
         error = {};
         t = Token(UNKNOWN);
         build();
@@ -109,53 +73,75 @@ private:
     Token t;
     Tokenizer* tk;
     CstNode* root;
-    size_t current;
+    CstNode* current;
 
     std::string error;
 
     void build();
     void destroy();
 
-    void advance() {
+    void advance_child() {
+        current->child = new CstNode(t);
+        current = current->child;
         t = tk->next();
     }
 
-    CstNode* parse_program();
-    CstNode* parse_main();
-    CstNode* parse_program_tail();
-    CstNode* parse_procedure();
-    CstNode* parse_function();
-    CstNode* parse_parameters();
-    CstNode* parse_block();
-    CstNode* parse_compound();
-    CstNode* parse_statement();
-    CstNode* parse_return();
-    CstNode* parse_declaration();
-    CstNode* parse_call();
-    CstNode* parse_call_statement();
-    CstNode* parse_sizeof();
-    CstNode* parse_getchar();
-    CstNode* parse_printf();
-    CstNode* parse_assignment();
-    CstNode* parse_iteration();
-    CstNode* parse_selection();
-    CstNode* parse_iteration_assignment();
-    CstNode* parse_expression();
-    CstNode* parse_initialization();
-    CstNode* parse_boolean_expression();
-    CstNode* parse_numerical_expression();
-    CstNode* parse_relational_expression();
-    CstNode* parse_numerical_operand();
-    CstNode* parse_identifier_and_ident_arr_param_list_decl();
-    CstNode* parse_identifier_and_ident_arr_param_list();
-    CstNode* parse_identifier_and_ident_arr_list();
-    CstNode* parse_identifier_arr_list();
-    CstNode* parse_identifier_list();
-    CstNode* parse_single_quoted_string();
-    CstNode* parse_double_quoted_string();
-    CstNode* parse_string();
+    void advance_sibling() {
+        current->sib = new CstNode(t);
+        current = current->sib;
+        t = tk->next();
+    }
 
-    bool parse_parameter_decl(CstNode* parent);
+    void expect_child(TokenType type) {
+        expect(type);
+        current->child = new CstNode(t);
+        current = current->child;
+        t = tk->next();
+    }
+
+    void expect_sibling(TokenType type) {
+        expect(type);
+        current->sib = new CstNode(t);
+        current = current->sib;
+        t = tk->next();
+    }
+
+
+    bool parse_program();
+    bool parse_main();
+    bool parse_program_tail();
+    bool parse_procedure();
+    bool parse_function();
+    bool parse_parameters();
+    bool parse_block();
+    bool parse_compound();
+    bool parse_statement();
+    bool parse_return();
+    bool parse_declaration();
+    bool parse_call();
+    bool parse_call_statement();
+    bool parse_sizeof();
+    bool parse_getchar();
+    bool parse_printf();
+    bool parse_assignment();
+    bool parse_iteration();
+    bool parse_selection();
+    bool parse_iteration_assignment();
+    bool parse_expression();
+    bool parse_initialization();
+    bool parse_boolean_expression();
+    bool parse_numerical_expression();
+    bool parse_relational_expression();
+    bool parse_numerical_operand();
+    bool parse_identifier_and_ident_arr_param_list_decl();
+    bool parse_identifier_and_ident_arr_param_list();
+    bool parse_identifier_and_ident_arr_list();
+    bool parse_identifier_arr_list();
+    bool parse_identifier_list();
+    bool parse_single_quoted_string();
+    bool parse_double_quoted_string();
+    bool parse_string();
+    bool parse_parameter_decl();
     
     static bool isRelationalExpression(Token t);
     static bool isNumericalOperator(Token t);
@@ -183,9 +169,24 @@ private:
 
     template<typename... Args>
     void syntaxError(std::format_string<Args...> fmt, Args&&... args) {
+        if (!ok()) {
+            return;
+        }
+
+#ifdef DEBUG
+        // assert(false);
+        error = std::format("Syntax error on line {}: {}\n{}",
+            tk->getLine(),
+            std::format(fmt, std::forward<Args>(args)...),
+            tk->getCurrentLine());
+        
+#else
         error = std::format("Syntax error on line {}: {}",
             tk->getLine(),
             std::format(fmt, std::forward<Args>(args)...));
+
+#endif
+        
     }
 
     template<typename T, typename... Args>
@@ -212,8 +213,8 @@ private:
         return true;
     }
 
-    CstNode* parse_first_accepted(std::initializer_list<CstNode*(Cst::*)()> f_args) {
-        CstNode* ret = nullptr;
+    bool parse_first_accepted(std::initializer_list<bool(Cst::*)()> f_args) {
+        bool ret = false;
         for (auto f : f_args) {
             ret = (this->*f)();
             if (ret) {
@@ -225,6 +226,5 @@ private:
 
 
 };
-
 
 #endif /* CST_HPP */

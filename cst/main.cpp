@@ -39,11 +39,12 @@ int main(int argc, char* argv[]) {
 
     if (!cst.ok()) {
         std::cout << cst.getError() << "\n";
+    } else {
+        
+        cst.print();
+        std::cout << "\n";
     }
 
-    cst.print();
-
-    std::cout << "\n";
 
     return 0;
 }
