@@ -7,28 +7,33 @@ bool isBrace(Token t) {
     return t.type == L_BRACE || t.type == R_BRACE;
 }
 
-bool Cst::isRelationalExpression(Token t) {
+bool Cst::is_relational_expression(Token t) {
     return any(t, LT, GT, LT_EQUAL, GT_EQUAL, BOOLEAN_EQUAL, BOOLEAN_NOT_EQUAL);
 }
 
-bool Cst::isNumericalOperator(Token t) {
+bool Cst::is_numerical_operator(Token t) {
     return any(t, PLUS, MINUS, ASTERISK, DIVIDE, MODULO, CARET);
 }
 
-bool Cst::isBooleanOperator(Token t) {
+bool Cst::is_boolean_operator(Token t) {
     return any(t, BOOLEAN_AND, BOOLEAN_OR);
 }
 
-bool Cst::isBooleanLiteral(Token t) {
+bool Cst::is_boolean_literal(Token t) {
     return t.type == IDENTIFIER && any(t, "TRUE", "FALSE");
 }
 
-bool Cst::isDatatypeSpecifier(Token t) {
+bool Cst::is_datatype_specifier(Token t) {
     return t.type == IDENTIFIER && any(t, "char", "bool", "int");
 }
 
-bool Cst::notReservedWord(Token t) {
-    return !any(t, isBooleanLiteral, isDatatypeSpecifier, "procedure",
+bool Cst::in_boolean_prefix() {
+    Token x = t.type == L_PAREN ? tk->peek() : t;
+    return is_boolean_literal(x) || x.type == BOOLEAN_NOT || is_boolean_operator(x);
+}
+
+bool Cst::not_reserved_word(Token t) {
+    return !any(t, is_boolean_literal, is_datatype_specifier, "procedure",
          "function", "getchar", "printf", "sizeof", "return", "void", 
          "for", "while", "if");
 }
@@ -72,7 +77,7 @@ bool Cst::parse_return() {
 }
 
 bool Cst::parse_declaration() {
-    if (!isDatatypeSpecifier(t) || tk->peek().type != IDENTIFIER) {
+    if (!is_datatype_specifier(t) || tk->peek().type != IDENTIFIER) {
         return false;
     }
 
@@ -180,11 +185,11 @@ bool Cst::parse_printf() {
 }
 
 bool Cst::parse_assignment() {
-    if (t.type != IDENTIFIER || isDatatypeSpecifier(t)) {
+    if (t.type != IDENTIFIER || is_datatype_specifier(t)) {
         return false;
     }
 
-    expect(notReservedWord, "Cannot assign to reserved word {}", t.content);
+    expect(not_reserved_word, "Cannot assign to reserved word {}", t.content);
     advance_child();
 
     if (t.type == L_BRACKET) {
@@ -205,7 +210,7 @@ bool Cst::parse_assignment() {
     } else if (parse_expression()) {
         DEBUG_PRINT("Assigned to expression");
     } else if (t.type == IDENTIFIER) {
-        expect(notReservedWord, "attempted to take value of reserved word {}", t.content);
+        expect(not_reserved_word, "attempted to take value of reserved word {}", t.content);
         advance_sibling();
     } else if ((t.type == SINGLE_QUOTE || t.type == DOUBLE_QUOTE) && tk->peek().type == ESCAPED_CHARACTER) {
         auto quoteType = t.type;
@@ -320,7 +325,7 @@ bool Cst::parse_iteration_assignment() {
 
     if (!parse_expression()) {
         if ((t.type == SINGLE_QUOTE || t.type == DOUBLE_QUOTE) && tk->peek().type == STRING) {
-            auto quoteType = t.type;
+            TokenType quoteType = t.type;
             advance_sibling(); // quote
             advance_sibling(); // string
             expect_sibling(quoteType); // end quote
@@ -345,9 +350,9 @@ bool Cst::parse_initialization() {
 
 bool Cst::parse_expression() {
 
-    if (any(t, "TRUE", "FALSE", BOOLEAN_NOT) || t.type == L_PAREN && any(tk->peek(), "TRUE", "FALSE", BOOLEAN_NOT)) {
-        return parse_boolean_expression();
-    }
+    // if (any(t, "TRUE", "FALSE", BOOLEAN_NOT) || t.type == L_PAREN && any(tk->peek(), "TRUE", "FALSE", BOOLEAN_NOT)) {
+    //     return parse_boolean_expression();
+    // }
 
     bool parenthesised = false;
     if (t.type == L_PAREN) {
@@ -370,7 +375,7 @@ bool Cst::parse_expression() {
                 parenthesised = false;
             }
             // <num expr> <rel op> <num expr>
-            if (isBooleanOperator(t)) {
+            if (is_boolean_operator(t)) {
                 if (!parse_boolean_expression()) {
                     syntaxError("Expected boolean expression after boolean operator");
                 }
@@ -391,7 +396,7 @@ bool Cst::parse_expression() {
         DEBUG_PRINT("boolean");
         expect_sibling(R_PAREN);
 
-        if (isBooleanOperator(t)) {
+        if (is_boolean_operator(t)) {
             advance_sibling();
             if (!parse_boolean_expression()) {
                 syntaxError("Expected boolean expression after boolean operator");
@@ -414,14 +419,20 @@ bool Cst::parse_expression() {
                         <NUMERICAL_OPERATOR> 	<NUMERICAL_EXPRESSION>
 */
 bool Cst::parse_numerical_expression() {
-    if (isNumericalOperator(t)) {
+
+    if (in_boolean_prefix()) {
+        return false;
+    }
+
+    if (is_numerical_operator(t)) {
         advance_sibling();
         if (!parse_numerical_expression()) {
             syntaxError("Expected numerical expression after numerical operator");
         }
-    } else if (tk->peek().type != BOOLEAN_NOT) {
+    } else {
         bool expecting_parenthesis = false;
         if (t.type == L_PAREN) {
+
             expecting_parenthesis = true;
             DEBUG_PRINT("parenthesis");
             advance_sibling();
@@ -445,7 +456,7 @@ bool Cst::parse_numerical_expression() {
             advance_sibling();
 
         } else {
-            if (!isNumericalOperator(t)) {
+            if (!is_numerical_operator(t)) {
                 if (expecting_parenthesis) {
                     syntaxError("failed to find closing parenthesis in numerical expression");
                 }
@@ -473,7 +484,7 @@ bool Cst::parse_numerical_expression() {
                 expecting_parenthesis = false;
             }
 
-            if (isNumericalOperator(t)) {
+            if (is_numerical_operator(t)) {
                 advance_sibling();
 
                 if (!parse_numerical_expression()) {
@@ -488,8 +499,6 @@ bool Cst::parse_numerical_expression() {
             expecting_parenthesis = false;
         }
 
-    } else {
-        return false;
     }
 
     return true;
@@ -520,7 +529,7 @@ bool Cst::parse_boolean_expression() {
 
      bool parenthesized = false;
 
-    if (t.type == INTEGER && !isRelationalExpression(tk->peek())) {
+    if (t.type == INTEGER && !is_relational_expression(tk->peek())) {
         return false;
     }
 
@@ -532,7 +541,7 @@ bool Cst::parse_boolean_expression() {
         parenthesized = true;
         advance_sibling();
 
-        if (isBooleanOperator(tk->peek())) {
+        if (is_boolean_operator(tk->peek())) {
             advance_sibling();
             parse_boolean_expression();
             expect_sibling(R_PAREN);
@@ -543,7 +552,7 @@ bool Cst::parse_boolean_expression() {
         }
     }
 
-    if (parenthesized && t.type == IDENTIFIER && isRelationalExpression(tk->peek())) {
+    if (parenthesized && t.type == IDENTIFIER && is_relational_expression(tk->peek())) {
         // parse as 
         // <L_PAREN> <NUMERICAL_OPERAND> <RELATIONAL_EXPRESSION> <NUMERICAL_OPERAND> <R_PAREN>
         // <L_PAREN> <NUMERICAL_OPERAND> <RELATIONAL_EXPRESSION> <NUMERICAL_OPERAND> <R_PAREN> <BOOLEAN_OPERATOR> <BOOLEAN_EXPRESSION>
@@ -554,7 +563,7 @@ bool Cst::parse_boolean_expression() {
 
         expect_sibling(R_PAREN);
 
-        if (isBooleanOperator(t)) {
+        if (is_boolean_operator(t)) {
             advance_sibling();
             parse_boolean_expression();
         }
@@ -562,13 +571,13 @@ bool Cst::parse_boolean_expression() {
         return true;
     }
 
-    if (!isBooleanLiteral(t) && parse_numerical_expression()) {
+    if (parse_numerical_expression()) {
         DEBUG_PRINT("parsed as numerical expr");
         if (parenthesized && t.type == R_PAREN) {
             advance_sibling();
             parenthesized = false;
         }
-        expect(isRelationalExpression, "Expected relational operator after numerical expression, found {}", t.content);
+        expect(is_relational_expression, "Expected relational operator after numerical expression, found {}", t.content);
         advance_sibling();
         if (!parse_numerical_expression()) {
             syntaxError("Expected numerical expression after relational operator");
@@ -586,13 +595,11 @@ bool Cst::parse_boolean_expression() {
         advance_sibling();
     }
 
-    bool negated = false;
     if (t.type == BOOLEAN_NOT) {
-        negated = true;
         advance_sibling();
     }
 
-    if (isBooleanLiteral(t)) {
+    if (is_boolean_literal(t)) {
         DEBUG_PRINT("parsing boolean literal");
         advance_sibling();
         if (parenthesized) {
@@ -608,7 +615,7 @@ bool Cst::parse_boolean_expression() {
             expect_sibling(R_PAREN);
         }
 
-        if (isBooleanOperator(t)) {
+        if (is_boolean_operator(t)) {
             advance_sibling();
             if (!parse_boolean_expression()) {
                 syntaxError("Expected boolean expression");
@@ -622,7 +629,7 @@ bool Cst::parse_boolean_expression() {
         DEBUG_PRINT("ident");
         advance_sibling();
 
-        if (isBooleanOperator(t)) {
+        if (is_boolean_operator(t)) {
             advance_sibling();
 
             if (!parse_boolean_expression()) {
@@ -640,14 +647,14 @@ bool Cst::parse_boolean_expression() {
 
     if (parenthesized && parse_numerical_operand()) {
         DEBUG_PRINT("parsing numerical operand");
-        expect(isRelationalExpression, "Expected relational operator after numerical operand, found {}", t.content);
+        expect(is_relational_expression, "Expected relational operator after numerical operand, found {}", t.content);
         advance_sibling();
 
         if (parse_numerical_operand()) {
             expect_sibling(R_PAREN);
 
             // <BOOLEAN_OPERATOR> <BOOLEAN_EXPRESSION>
-            if (isBooleanOperator(t)) {
+            if (is_boolean_operator(t)) {
                 advance_sibling();
 
                 if (!parse_boolean_expression()) {
@@ -672,7 +679,7 @@ bool Cst::parse_boolean_expression() {
 
 
 bool Cst::parse_relational_expression() {
-    if (isRelationalExpression(t)) {
+    if (is_relational_expression(t)) {
         advance_sibling();
         return true;
     }
@@ -701,6 +708,10 @@ bool Cst::parse_numerical_operand() {
     if (basic) {
         return true;
     } 
+
+    if (is_boolean_literal(t)) {
+        return false;
+    }
 
     if (any(t, INTEGER, IDENTIFIER)) {
         advance_sibling();
@@ -778,7 +789,7 @@ bool Cst::parse_identifier_and_ident_arr_list() {
     if (t.type != IDENTIFIER) {
         return false;
     }
-    expect(notReservedWord, "reserved word \"{}\" cannot be used for the name of a variable.", t.content);
+    expect(not_reserved_word, "reserved word \"{}\" cannot be used for the name of a variable.", t.content);
     advance_sibling(); // ident
     if (t.type == L_BRACKET) {
         advance_sibling();
@@ -817,14 +828,10 @@ bool Cst::parse_string() {
     return false;
 }
 
-
-
 bool Cst::parse_statement() {
     return parse_first_accepted({
         &Cst::parse_declaration, 
-        
         &Cst::parse_printf, 
-        
         &Cst::parse_selection,
         &Cst::parse_iteration, 
         &Cst::parse_return, 
@@ -841,13 +848,13 @@ bool Cst::parse_compound() {
 }
 
 bool Cst::parse_parameter_decl() {
-    if (!isDatatypeSpecifier(t)) {
+    if (!is_datatype_specifier(t)) {
         return false;
     }
 
     advance_sibling();
 
-    expect(notReservedWord, "reserved word \"{}\" cannot be used for the name of a variable.", t.content);
+    expect(not_reserved_word, "reserved word \"{}\" cannot be used for the name of a variable.", t.content);
     expect_sibling(IDENTIFIER);
     
     if (t.type == L_BRACKET) {   
@@ -861,7 +868,7 @@ bool Cst::parse_parameter_decl() {
 
 
 bool Cst::parse_parameters() {
-    if (!isDatatypeSpecifier(t)) {
+    if (!is_datatype_specifier(t)) {
         return false;
     }
 
@@ -887,7 +894,7 @@ bool Cst::parse_procedure() {
 
     advance_child(); // procedure
 
-    expect(notReservedWord, "reserved word \"{}\" cannot be the name of a procedure", t.content);
+    expect(not_reserved_word, "reserved word \"{}\" cannot be the name of a procedure", t.content);
     expect_sibling(IDENTIFIER); // name
 
     expect_sibling(L_PAREN);
@@ -920,11 +927,11 @@ bool Cst::parse_function() {
     advance_child(); // function
 
 
-    expect(isDatatypeSpecifier, "Expected datatype specifier after function declaration");
+    expect(is_datatype_specifier, "Expected datatype specifier after function declaration");
     advance_sibling(); // return type
 
     
-    expect(notReservedWord, "reserved word \"{}\" cannot be used for the name of a function.", t.content);
+    expect(not_reserved_word, "reserved word \"{}\" cannot be used for the name of a function.", t.content);
     expect_sibling(IDENTIFIER); // name
 
     expect_sibling(L_PAREN);
@@ -1011,7 +1018,6 @@ bool Cst::parse_program() {
     return true;
 }
 
-
 void deleteTree(CstNode* node) {
     if (!node) {
         return;
@@ -1025,35 +1031,12 @@ void Cst::destroy() {
     deleteTree(root);
 }
 
-
 void Cst::build() {
     t = tk->next();
     parse_program();
 }
 
-void printNode(CstNode* n) {
-    if (!n) {
-        std::cout << "NULL NODE POINTER!!";
-        return;
-    }
-
-    if (n->t.type != UNKNOWN) {
-        std::cout << n->t.content;
-    } else {
-        std::cout << "[CST NODE]";
-    }
-    
-    if (n->sib) {
-        std::cout << "   ";
-        printNode(n->sib);
-    }
-    if (n->child) {
-        std::cout << "\n";
-        printNode(n->child);
-    }
-}
-
-void printCstNode(CstNode* n, int depth) {
+void printCstNode(CstNode* n) {
     if (!n) {
         std::cout << "NULL NODE POINTER!!";
         return;
@@ -1073,10 +1056,8 @@ void printCstNode(CstNode* n, int depth) {
             n = n->child;
         }
     }
-
-
 }
 
 void Cst::print() {
-    printCstNode(root->child, 0);
+    printCstNode(root->child);
 }

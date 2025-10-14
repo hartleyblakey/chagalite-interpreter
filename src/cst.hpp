@@ -142,13 +142,16 @@ private:
     bool parse_double_quoted_string();
     bool parse_string();
     bool parse_parameter_decl();
+
+    bool in_boolean_prefix();
     
-    static bool isRelationalExpression(Token t);
-    static bool isNumericalOperator(Token t);
-    static bool isBooleanOperator(Token t);
-    static bool isBooleanLiteral(Token t);
-    static bool isDatatypeSpecifier(Token t);
-    static bool notReservedWord(Token t);
+    static bool is_relational_expression(Token t);
+    static bool is_numerical_operator(Token t);
+    static bool is_boolean_operator(Token t);
+    static bool is_boolean_literal(Token t);
+    static bool is_datatype_specifier(Token t);
+    static bool not_reserved_word(Token t);
+    
 
     static bool any(const Token& t, TokenType aType) {
         return t.type == aType;
