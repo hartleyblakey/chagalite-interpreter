@@ -1,26 +1,20 @@
 #ifndef CST_HPP
 #define CST_HPP
 
-#include "tokenize.hpp"
-#include <cstdint>
-#include <vector>
-#include <string>
-#include <format>
 #include <cassert>
+#include <cstdint>
+#include <format>
+#include <string>
+#include <vector>
 
-#ifdef DEBUG
-#define DEBUG_PRINT(s) std::cout << s << " in " << __func__ << " seeing " << t.content << " --> " << tk->peek().content << " on line " << tk->getLine() << "\n"; 
-#else
-#define DEBUG_PRINT(s)
-#endif
-
+#include "tokenize.hpp"
 
 struct CstNode {
     CstNode* child;
     CstNode* sib;
     Token t;
 
-    CstNode (Token tok) {
+    CstNode(Token tok) {
         t = tok;
         child = nullptr;
         sib = nullptr;
@@ -51,7 +45,7 @@ struct CstNode {
 };
 
 class Cst {
-public:
+   public:
     Cst() = delete;
     Cst(Tokenizer* tk) {
         this->tk = tk;
@@ -62,14 +56,16 @@ public:
         build();
     }
 
+    ~Cst() {
+        destroy();
+    }
+
     void print();
 
     std::string getError() { return error; }
     bool ok() { return error.empty(); }
 
-private:
-
-
+   private:
     Token t;
     Tokenizer* tk;
     CstNode* root;
@@ -94,18 +90,13 @@ private:
 
     void expect_child(TokenType type) {
         expect(type);
-        current->child = new CstNode(t);
-        current = current->child;
-        t = tk->next();
+        advance_child();
     }
 
     void expect_sibling(TokenType type) {
         expect(type);
-        current->sib = new CstNode(t);
-        current = current->sib;
-        t = tk->next();
+        advance_sibling();
     }
-
 
     bool parse_program();
     bool parse_main();
@@ -133,25 +124,18 @@ private:
     bool parse_numerical_expression();
     bool parse_relational_expression();
     bool parse_numerical_operand();
-    bool parse_identifier_and_ident_arr_param_list_decl();
     bool parse_identifier_and_ident_arr_param_list();
     bool parse_identifier_and_ident_arr_list();
-    bool parse_identifier_arr_list();
-    bool parse_identifier_list();
-    bool parse_single_quoted_string();
-    bool parse_double_quoted_string();
-    bool parse_string();
     bool parse_parameter_decl();
 
     bool in_boolean_prefix();
-    
+
     static bool is_relational_expression(Token t);
     static bool is_numerical_operator(Token t);
     static bool is_boolean_operator(Token t);
     static bool is_boolean_literal(Token t);
     static bool is_datatype_specifier(Token t);
     static bool not_reserved_word(Token t);
-    
 
     static bool any(const Token& t, TokenType aType) {
         return t.type == aType;
@@ -161,50 +145,85 @@ private:
         return t.content == aContent;
     }
 
-    static bool any(const Token& t, bool(*aTest)(Token)) {
+    static bool any(const Token& t, bool (*aTest)(Token)) {
         return aTest(t);
     }
 
-    template<typename... Args>
+    /**
+     * @brief Helper to test if a token matches either a TokenType,
+     * token content string, or predicate function
+     */
+    template <typename... Args>
     static bool any(const Token& t, Args... args) {
         return (any(t, args) || ...);
     }
 
-    template<typename... Args>
+    /**
+     * @brief Emit a formatted syntax error. If this is called twice, only the
+     * first will be recorded in the error string.
+     * 
+     * Arguments are forwards to std::format() for the error message. 
+     * 
+     * Automatically prints the line number, and the line itself if DEBUG is defined
+     */
+    template <typename... Args>
     void syntaxError(std::format_string<Args...> fmt, Args&&... args) {
         if (!ok()) {
             return;
         }
 
 #ifdef DEBUG
-        // assert(false);
+        // show extra context in debug
         error = std::format("Syntax error on line {}: {}\n{}",
-            tk->getLine(),
-            std::format(fmt, std::forward<Args>(args)...),
-            tk->getCurrentLine());
-        
+                            tk->getLine(),
+                            std::format(fmt, std::forward<Args>(args)...),
+                            tk->getLineDebug());
+
 #else
         error = std::format("Syntax error on line {}: {}",
-            tk->getLine(),
-            std::format(fmt, std::forward<Args>(args)...));
+                            tk->getLine(),
+                            std::format(fmt, std::forward<Args>(args)...));
 
 #endif
-        
     }
 
-    template<typename T, typename... Args>
+    /**
+     * @brief Expect the current token to match the pattern, which can be a
+     * token type enum, a string to check against the token content, or a
+     * predicate function to call on the current token.
+     *
+     * If the token does not match, emit a formatted syntax error
+     *
+     * @tparam T either TokenType, const char*, or a Token --> bool function
+     * @tparam Args The type arguments to std::format
+     * @param expected The patten to expect
+     * @param fmt The format string for the syntax error
+     * @param args The value arguments to std::format
+     * @return true if the token matched
+     * @return false if the token did not match
+     */
+    template <typename T, typename... Args>
     bool expect(T expected, std::format_string<Args...> fmt, Args&&... args) {
         if (!ok()) {
             return false;
         }
         if (!any(t, expected)) {
-            syntaxError(fmt,  std::forward<Args>(args)...);
+            syntaxError(fmt, std::forward<Args>(args)...);
             return false;
         }
         return true;
     }
 
-    template<typename T>
+    /**
+     * @brief Expect the current token to match the given token type or content
+     * Otherwise, emit a syntax error with the current line number.
+     *
+     * @tparam T either TokenType or const char*
+     * @param expected the expected token type or content string
+     * @return true if the current token matches
+     * @return false otherwise
+     */
+    template <typename T>
     bool expect(T expected) {
         if (!ok()) {
             return false;
@@ -216,7 +235,7 @@ private:
         return true;
     }
 
-    bool parse_first_accepted(std::initializer_list<bool(Cst::*)()> f_args) {
+    bool parse_first_accepted(std::initializer_list<bool (Cst::*)()> f_args) {
         bool ret = false;
         for (auto f : f_args) {
             ret = (this->*f)();
@@ -226,8 +245,6 @@ private:
         }
         return ret;
     }
-
-
 };
 
 #endif /* CST_HPP */

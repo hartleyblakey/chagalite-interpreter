@@ -138,7 +138,7 @@ public:
      * 
      * @return std::string
      */
-    std::string getCurrentLine();
+    std::string getLineDebug();
     
 
     /**
