@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+
+
 #ifdef DEBUG
 #define DEBUG_PRINT(s) std::cout << s << " in " << __func__ << " seeing " << t.content << " --> " << tk->peek().content << " on line " << tk->getLine() << "\n";
 #else
@@ -85,6 +87,8 @@ bool Cst::parse_declaration() {
     if (!is_datatype_specifier(t) || tk->peek().type != IDENTIFIER) {
         return false;
     }
+
+    table.add_var(tk->peek().content, to_datatype(t));
 
     advance_child();  // data type
     if (!parse_identifier_and_ident_arr_list()) {
@@ -795,6 +799,8 @@ bool Cst::parse_parameter_decl() {
         return false;
     }
 
+    table.add_param(tk->peek().content, to_datatype(t));
+
     advance_sibling();
 
     expect(not_reserved_word, "reserved word \"{}\" cannot be used for the name of a variable.", t.content);
@@ -837,6 +843,7 @@ bool Cst::parse_procedure() {
     advance_child();  // procedure
 
     expect(not_reserved_word, "reserved word \"{}\" cannot be the name of a procedure", t.content);
+    table.enter_function(t.content, {});
     expect_sibling(IDENTIFIER);  // name
 
     expect_sibling(L_PAREN);
@@ -857,6 +864,8 @@ bool Cst::parse_procedure() {
 
     expect_child(R_BRACE);
 
+    table.exit_function();
+
     return true;
 }
 
@@ -868,6 +877,8 @@ bool Cst::parse_function() {
     advance_child();  // function
 
     expect(is_datatype_specifier, "Expected datatype specifier after function declaration");
+
+    table.enter_function(tk->peek().content, to_datatype(t));
     advance_sibling();  // return type
 
     expect(not_reserved_word, "reserved word \"{}\" cannot be used for the name of a function.", t.content);
@@ -893,6 +904,8 @@ bool Cst::parse_function() {
 
     expect_child(R_BRACE);
 
+    table.exit_function();
+
     return true;
 }
 
@@ -913,7 +926,10 @@ bool Cst::parse_main() {
         return false;
     }
     advance_child();    // procedure
+    table.enter_function(t.content, {});
     advance_sibling();  // main
+
+    
 
     expect_sibling(L_PAREN);
     expect("void", "Main procedure must have parameter type 'void', has {}", t.content);
@@ -924,6 +940,8 @@ bool Cst::parse_main() {
     if (!parse_block()) {
         syntaxError("Expected valid block statement following main declaration");
     }
+
+    table.exit_function();
 
     return true;
 }
