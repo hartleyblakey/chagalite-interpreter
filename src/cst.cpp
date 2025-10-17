@@ -210,9 +210,10 @@ bool Cst::parse_assignment() {
     if ((t.type == SINGLE_QUOTE || t.type == DOUBLE_QUOTE) && tk->peek().type == STRING) {
         auto quoteType = t.type;
         advance_sibling();          // quote
-        expect_sibling(STRING);     // escaped char
+        advance_sibling();          // string
         expect_sibling(quoteType);  // end quote
     } else if (parse_expression()) {
+        // already done here
     } else if (t.type == IDENTIFIER) {
         expect(not_reserved_word, "attempted to take value of reserved word {}", t.content);
         advance_sibling();
@@ -246,7 +247,9 @@ bool Cst::parse_iteration() {
         expect_sibling(L_PAREN);
         parse_initialization();
         expect_sibling(SEMICOLON);
-        parse_boolean_expression();
+        if (!parse_boolean_expression()) {
+            syntaxError("Expected boolean expression in for loop condition");
+        }
         expect_sibling(SEMICOLON);
         parse_iteration_assignment();
         expect_sibling(R_PAREN);
@@ -967,6 +970,8 @@ void Cst::build() {
     parse_program();
 }
 
+// specific to the tree layout specified in the assignment
+// not a general BFS
 void printCstNode(CstNode* n) {
     if (!n) {
         std::cout << "NULL NODE POINTER!!";

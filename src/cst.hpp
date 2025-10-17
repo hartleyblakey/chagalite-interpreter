@@ -214,6 +214,8 @@ class Cst {
         return true;
     }
 
+
+
     /**
      * @brief Expect the current token to match the given token type or content
      * Otherwise, emit a syntax error with the current line number.
@@ -234,6 +236,8 @@ class Cst {
         }
         return true;
     }
+
+
 
     bool parse_first_accepted(std::initializer_list<bool (Cst::*)()> f_args) {
         bool ret = false;
