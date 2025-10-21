@@ -1,1 +1,1 @@
-Syntax error on line 6: reserved word "char" cannot be used for the name of a variable.
+Error on line 18: variable "string_size" is already defined locally

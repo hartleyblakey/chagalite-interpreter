@@ -1,7 +1,27 @@
-// ***************************************************
-// * CS460: Programming Assignment 3: Test Program 6 *
-// ***************************************************
+/***************************************************
+ * CS460: Programming Assignment 4: Test Program 6 *
+ ***************************************************/
+
+char announcement[2048];
+
+
 procedure main (void)
 {
-  char buffer[-5]; // syntax error: array size must be declared as a positive integer
+  char name[100];
 }
+
+
+function bool my_function (char byte)
+{
+  int i, j;
+  bool found_something;
+  int found_something;
+
+  return found_something;
+}
+
+
+procedure do_nothing (int i, int j, int k)
+{
+}
+

@@ -1,19 +1,43 @@
-function   int   sum_of_first_n_squares   (   int   n   )
-{
-int   sum   ;
-sum   =   0   ;
-if   (   n   >=   1   )
-{
-sum   =   n   *   (   n   +   1   )   *   (   2   *   n   +   1   )   /   6   ;
-}
-return   sum   ;
-}
-procedure   main   (   void   )
-{
-int   n   ;
-int   sum   ;
-n   =   100   ;
-sum   =   sum_of_first_n_squares   (   n   )   ;
-printf   (   "   sum of the squares of the first %d numbers = %d\n   "   ,   n   ,   sum   )   ;
-}
+      IDENTIFIER_NAME: sum_of_first_n_squares
+      IDENTIFIER_TYPE: function
+             DATATYPE: int
+    DATATYPE_IS_ARRAY: no
+  DATATYPE_ARRAY_SIZE: 0
+                SCOPE: 1
+
+      IDENTIFIER_NAME: sum
+      IDENTIFIER_TYPE: datatype
+             DATATYPE: int
+    DATATYPE_IS_ARRAY: no
+  DATATYPE_ARRAY_SIZE: 0
+                SCOPE: 1
+
+      IDENTIFIER_NAME: main
+      IDENTIFIER_TYPE: procedure
+             DATATYPE: NOT APPLICABLE
+    DATATYPE_IS_ARRAY: no
+  DATATYPE_ARRAY_SIZE: 0
+                SCOPE: 2
+
+      IDENTIFIER_NAME: n
+      IDENTIFIER_TYPE: datatype
+             DATATYPE: int
+    DATATYPE_IS_ARRAY: no
+  DATATYPE_ARRAY_SIZE: 0
+                SCOPE: 2
+
+      IDENTIFIER_NAME: sum
+      IDENTIFIER_TYPE: datatype
+             DATATYPE: int
+    DATATYPE_IS_ARRAY: no
+  DATATYPE_ARRAY_SIZE: 0
+                SCOPE: 2
+
+
+   PARAMETER LIST FOR: sum_of_first_n_squares
+      IDENTIFIER_NAME: n
+             DATATYPE: int
+    DATATYPE_IS_ARRAY: no
+  DATATYPE_ARRAY_SIZE: 0
+                SCOPE: 1
 

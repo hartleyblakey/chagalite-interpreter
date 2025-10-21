@@ -1,54 +1,33 @@
 /***************************************************
- * CS460: Programming Assignment 3: Test Program 4 *
+ * CS460: Programming Assignment 4: Test Program 4 *
  ***************************************************/
 
-char announcement[2048];
+char my_string[1024];
 
 
 procedure main (void)
 {
-  char name[100];
-
-  name = 'Robert\x0';
-  announcement = "You've got mail!\x0";
-  display_announcement (name[0]);
+  result = TRUE;
+  my_string[0] = '\x0';
+  number = 3;
 }
 
 
-function bool empty_string (char string[4096])
+int number;
+
+
+function bool random_long_parameter_list (int ensity, char ter, int rospective, int egrity, char latan, char coal, int elligent, bool lean, char treuse, char ming, int uitive)
 {
-  int i;
-  int num_bytes_before_null;
-  bool found_null;
-
-  found_null = FALSE;
-  num_bytes_before_null = 0;
-  i = 0;
-  while ((i < 4096) && (!found_null))
-  {
-    if (string[i] == '\x0')
-    {
-      found_null = TRUE;
-    }
-    else
-    {
-      num_bytes_before_null = num_bytes_before_null + 1;
-    }
-    i = i + 1;
-  }
-  return (num_bytes_before_null == 0);
+  i = 1;
+  j = 1000;
+  k = 25;
+  return TRUE;
 }
 
+bool result;
 
-procedure display_announcement (char name[512])
+procedure do_nothing (void)
 {
-  if (!empty_string(name))
-  {
-    printf ("Welcome, %s\n\n", name);
-    if (!empty_string(announcement))
-    {
-      printf ("%s\n", announcement);
-    }
-  }
 }
 
+int i, j, k;

@@ -1,8 +1,8 @@
 // ***************************************************
-// * CS460: Programming Assignment 3: Test Program 1 *
+// * CS460: Programming Assignment 4: Test Program 1 *
 // ***************************************************
 
-function bool sum_of_first_n_squares (int n, int m, bool k)
+function int sum_of_first_n_squares (int n)
 {
   int sum;
 

@@ -1,61 +1,54 @@
-// ***************************************************
-// * CS460: Programming Assignment 3: Test Program 3 *
-// ***************************************************
+/***************************************************
+ * CS460: Programming Assignment 4: Test Program 3 *
+ ***************************************************/
 
-
-
-// ***********************************************************************************
-// * Hex digit converts a single character into its non-negative integer equivalent. *
-// *                                                                                 *
-// * Hex digit returns -1 upon error                                                 *
-// ***********************************************************************************
-function int hexdigit2int (char hex_digit)
-{
-  int i, digit;
-
-  digit = -1;
-  if ((hex_digit >= '0') && (hex_digit <= '9'))
-  {
-    digit = hex_digit - '0';
-  }
-  else
-  {
-    if ((hex_digit >= 'a') && (hex_digit <= 'f'))
-    {
-      digit = hex_digit - 'a' + 10;
-    }
-    else
-    {
-      if ((hex_digit >= 'A') && (hex_digit <= 'F'))
-      {
-        digit = hex_digit - 'A' + 10; 
-      }
-    }
-  }
-  return digit;
-}
-
+char announcement[2048];
 
 
 procedure main (void)
 {
-  char hexnum[9];
-  int i, digit, number; 
+  char name[100];
 
-  number = 0;
-  hexnum = "feed\x0";
-  digit = 0;
-  for (i = 0; (i < 4) && (digit > -1); i = i + 1)
+  name = 'Robert\x0';
+  announcement = "You've got mail!\x0";
+  display_announcement (name);
+}
+
+
+function bool empty_string (char string[4096])
+{
+  int i;
+  int num_bytes_before_null;
+  bool found_null;
+
+  found_null = FALSE;
+  num_bytes_before_null = 0;
+  i = 0;
+  while ((i < 4096) && (!found_null))
   {
-    digit = hexdigit2int (hexnum[i]);
-    if (digit > -1)
+    if (string[i] == '\x0')
     {
-      number = number * 16 + digit;
+      found_null = TRUE;
     }
+    else
+    {
+      num_bytes_before_null = num_bytes_before_null + 1;
+    }
+    i = i + 1;
   }
-  if (digit > -1)
+  return (num_bytes_before_null == 0);
+}
+
+
+procedure display_announcement (char name[512])
+{
+  if (!empty_string(name))
   {
-    printf ("Hex: 0x%s is %d decimal\n", hexnum, number);
+    printf ("Welcome, %s\n\n", name);
+    if (!empty_string(announcement))
+    {
+      printf ("%s\n", announcement);
+    }
   }
 }
 
