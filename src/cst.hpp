@@ -13,25 +13,33 @@
 #include <variant>
 #include <iostream>
 
+// #define DEBUG
+
 class SymbolTable {
     
-    enum VariableType {
+    // make optional<Datatype> 4 bytes
+    enum Datatype: uint16_t {
         Int,
         Char,
-        String,
         Bool
+    };
+
+    // no values needed now, can be easily extended
+    struct VariableNode {
+        Datatype type;
+        uint32_t length;
     };
 
     struct Node;
 
-    struct FunctionType {
-        std::optional<VariableType> return_type;
+    struct FunctionNode {
+        std::optional<Datatype> return_type;
         std::vector<Node*> params;
     };
 
     struct Node {
         std::string_view name;
-        std::variant<FunctionType, VariableType> payload;
+        std::variant<FunctionNode, VariableNode> payload;
         uint32_t scope = 0;
         Node* next = nullptr;
     };
@@ -59,55 +67,70 @@ class SymbolTable {
         Node* n = head;
         uint32_t scope = current_scope();
         while (n) {
-            if ((n->name == name && n->scope == 0) || n->scope == scope) {
+            if (n->name == name && (n->scope == 0 || n->scope == scope)) {
                 break;
             }
+            n = n->next;
         }
         return n;
     }
 
-    void enter_function(std::string_view name, std::optional<VariableType> return_type) {
-        current_function = new Node{name, FunctionType{return_type, {}}, next_scope};
+    // add a new function with empty parameters to the symbol table
+    void enter_function(std::string_view name, std::optional<Datatype> return_type) {
+        current_function = new Node{name, FunctionNode{return_type, {}}, next_scope};
         next_scope++;
         add_node(current_function);
     }
 
-    void add_param(std::string_view name, VariableType type) {
-        Node* p = new Node{name, type, current_scope()};
+    // add a new variable and link it to the current function
+    void add_param(std::string_view name, Datatype type) {
+        Node* p = new Node{name, VariableNode{type, 0}, current_scope()};
         add_node(p);
-        std::get<FunctionType>(current_function->payload).params.push_back(p);
+        if (current_function) {
+            std::get<FunctionNode>(current_function->payload).params.push_back(p);
+        }
+    }
+
+    // make the last entry in the list an array
+    void make_array(int length) {
+        std::get<VariableNode>(tail->payload).length = length;
     }
 
     void exit_function() {
         current_function = nullptr;
     }
 
-    void add_var(std::string_view name, VariableType type) {
-        Node* v = new Node{name, type, current_scope()};
+    // add a new variable to the symbol table
+    void add_var(std::string_view name, Datatype type) {
+        Node* v = new Node{name, VariableNode{type, 0}, current_scope()};
         add_node(v);
     }
 
-    std::string_view vartype_to_name(VariableType t) {
+    std::string_view vartype_to_name(Datatype t) {
         switch (t) {
-            case VariableType::Bool:
+            case Datatype::Bool:
                 return "bool";
-            case VariableType::Int:
+            case Datatype::Int:
                 return "int";
-            case VariableType::Char:
+            case Datatype::Char:
                 return "char";
-            default:
-                return "unknown";
         }
     }
 public:
-    void print() {
+    void print_varnode(VariableNode* v) {
+        std::cout << vartype_to_name(v->type);
+        if (v->length) {
+            std::cout << '[' << v->length << ']';
+        }
+    }
+    // condensed format for debugging
+    void print_mine() {
         Node* n = head;
         while (n) {
             std::cout << n->scope << " | " << n->name << " : ";
-            if (VariableType* v = std::get_if<VariableType>(&n->payload)) {
-                std::cout << vartype_to_name(*v);
-
-            } else if (FunctionType* f = std::get_if<FunctionType>(&n->payload)) {
+            if (VariableNode* v = std::get_if<VariableNode>(&n->payload)) {
+                print_varnode(v);
+            } else if (FunctionNode* f = std::get_if<FunctionNode>(&n->payload)) {
                 std::cout << "function (";
                 if (f->params.empty()) {
                     std::cout << "void";
@@ -116,12 +139,94 @@ public:
                     if (i) {
                         std::cout << ", ";
                     }
-                    std::cout << vartype_to_name(std::get<VariableType>(f->params[i]->payload));
+                    print_varnode(&std::get<VariableNode>(f->params[i]->payload));
                 }
                 std::cout << ") --> " << (f->return_type.has_value() ? vartype_to_name(*(f->return_type)) : "void");
             }
             std::cout << "\n";
             n = n->next;
+        }
+    }
+/*
+      IDENTIFIER_NAME: random_long_parameter_list
+      IDENTIFIER_TYPE: function
+             DATATYPE: bool
+    DATATYPE_IS_ARRAY: no
+  DATATYPE_ARRAY_SIZE: 0
+                SCOPE: 2
+*/
+
+
+    void print() {
+        Node* n = head;
+        while (n) {
+            std::cout << std::format("{:>21}: {}\n", "IDENTIFIER_NAME", n->name);
+            if (VariableNode* v = std::get_if<VariableNode>(&n->payload)) {
+                std::cout << std::format("{:>21}: {}\n", "IDENTIFIER_TYPE", "datatype");
+                std::cout << std::format("{:>21}: {}\n", "DATATYPE", vartype_to_name(v->type));
+                if (v->length) {
+                    std::cout << std::format("{:>21}: {}\n", "DATATYPE_IS_ARRAY", "yes");
+                } else {
+                    std::cout << std::format("{:>21}: {}\n", "DATATYPE_IS_ARRAY", "no");
+                }
+                std::cout << std::format("{:>21}: {}\n", "DATATYPE_ARRAY_SIZE", v->length);
+                std::cout << std::format("{:>21}: {}\n", "SCOPE", n->scope);
+            } else if (FunctionNode* f = std::get_if<FunctionNode>(&n->payload)) {
+                if (f->return_type.has_value()) {
+                    std::cout << std::format("{:>21}: {}\n", "IDENTIFIER_TYPE", "function");
+                    std::cout << std::format("{:>21}: {}\n", "DATATYPE", vartype_to_name(*f->return_type));
+                } else {
+                    std::cout << std::format("{:>21}: {}\n", "IDENTIFIER_TYPE", "procedure");
+                    std::cout << std::format("{:>21}: {}\n", "DATATYPE", "NOT APPLICABLE");
+                }
+                std::cout << std::format("{:>21}: {}\n", "DATATYPE_IS_ARRAY", "no");
+                std::cout << std::format("{:>21}: {}\n", "DATATYPE_ARRAY_SIZE", 0);
+                std::cout << std::format("{:>21}: {}\n", "SCOPE", n->scope);
+
+                // skip printing its parameters until the end
+                for (size_t i = 0; i < f->params.size(); i++) {
+                    n = n->next;
+                }
+            }
+            
+            std::cout << "\n";
+            if (n) {
+                n = n->next;
+            }
+        }
+        
+        // print functions and their parameters
+        n = head;
+        while (n) {
+            if (FunctionNode* f = std::get_if<FunctionNode>(&n->payload)) {
+                if (f->params.empty()) {
+                    if (n) {
+                        n = n->next;
+                    }
+                    continue;
+                }
+                std::cout << "\n";
+                std::cout << std::format("{:>21}: {}\n", "PARAMETER LIST FOR", n->name);
+                
+                for (Node* p : f->params) {
+                    std::cout << std::format("{:>21}: {}\n", "IDENTIFIER_NAME", p->name);
+                    VariableNode* v = &std::get<VariableNode>(p->payload);
+                    std::cout << std::format("{:>21}: {}\n", "DATATYPE", vartype_to_name(v->type));
+                    if (v->length) {
+                        std::cout << std::format("{:>21}: {}\n", "DATATYPE_IS_ARRAY", "yes");
+                    } else {
+                        std::cout << std::format("{:>21}: {}\n", "DATATYPE_IS_ARRAY", "no");
+                    }
+                    std::cout << std::format("{:>21}: {}\n", "DATATYPE_ARRAY_SIZE", v->length);
+                    std::cout << std::format("{:>21}: {}\n", "SCOPE", p->scope);
+                    std::cout << "\n";
+                }
+            }
+            
+            
+            if (n) {
+                n = n->next;
+            }
         }
     }
 
@@ -165,7 +270,7 @@ struct CstNode {
 
 class Cst {
     using StNode = SymbolTable::Node;
-    using Datatype = SymbolTable::VariableType;
+    using Datatype = SymbolTable::Datatype;
 
    public:
     Cst() = delete;
@@ -270,7 +375,7 @@ class Cst {
     bool parse_relational_expression();
     bool parse_numerical_operand();
     bool parse_identifier_and_ident_arr_param_list();
-    bool parse_identifier_and_ident_arr_list();
+    bool parse_identifier_and_ident_arr_list(Datatype type);
     bool parse_parameter_decl();
 
     bool in_boolean_prefix();
@@ -316,6 +421,7 @@ class Cst {
                             tk->getLine(),
                             std::format(fmt, std::forward<Args>(args)...),
                             tk->getLineDebug());
+        table.print_mine();
 
 #else
         error = std::format("Syntax error on line {}: {}",
@@ -382,6 +488,28 @@ class Cst {
             }
         }
         return ret;
+    }
+
+    void check_shadow(std::string_view ident, std::string_view type) {
+        if (!ok()) {
+            return;
+        }
+        if (StNode* n = table.resolve(t.content)) {
+            std::string_view locality;
+            if (std::holds_alternative<SymbolTable::FunctionNode>(n->payload)) {
+                locality = "";
+            } else {
+                if (n->scope == 0) {
+                    locality = " globally";
+                } else {
+                    locality = " locally";
+                }
+            }
+            error = std::format("Error on line {}: {} \"{}\" is already defined{}", tk->getLine(), type, ident, locality);
+#ifdef DEBUG
+            table.print_mine();
+#endif
+        }
     }
 };
 

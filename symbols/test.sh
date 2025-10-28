@@ -10,7 +10,7 @@ OUTPUT=output
 TEST_EXT=c
 OUTPUT_EXT=txt
 
-BINARY=build/cst
+BINARY=build/symbols
 
 if [ -d "$TESTS" ] && [ -d "$EXPECTED" ]; then
     mkdir -p "$OUTPUT"

@@ -32,7 +32,7 @@ std::string Tokenizer::getLineDebug() {
     while (line_end < file.length() && file[line_end] != '\n')
         line_end++;
     if (file[line_end] == '\n') {
-        line_end--;
+        // line_end--;
     }
     
     std::string line_num = std::to_string(line);

@@ -42,7 +42,6 @@ int main(int argc, char* argv[]) {
     } else {
         
         cst.table.print();
-        std::cout << "\n";
     }
 
 

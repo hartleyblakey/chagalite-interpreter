@@ -2,8 +2,6 @@
 
 #include <iostream>
 
-
-
 #ifdef DEBUG
 #define DEBUG_PRINT(s) std::cout << s << " in " << __func__ << " seeing " << t.content << " --> " << tk->peek().content << " on line " << tk->getLine() << "\n";
 #else
@@ -87,11 +85,10 @@ bool Cst::parse_declaration() {
     if (!is_datatype_specifier(t) || tk->peek().type != IDENTIFIER) {
         return false;
     }
-
-    table.add_var(tk->peek().content, to_datatype(t));
+    Datatype type = to_datatype(t);
 
     advance_child();  // data type
-    if (!parse_identifier_and_ident_arr_list()) {
+    if (!parse_identifier_and_ident_arr_list(type)) {
         syntaxError("empty declarations not allowed");
     }
     expect_sibling(SEMICOLON);
@@ -752,10 +749,13 @@ bool Cst::parse_identifier_and_ident_arr_param_list() {
     return true;
 }
 
-bool Cst::parse_identifier_and_ident_arr_list() {
+bool Cst::parse_identifier_and_ident_arr_list(Datatype type) {
     if (t.type != IDENTIFIER) {
         return false;
     }
+   
+    check_shadow(t.content, "variable");
+    table.add_var(t.content, type);
     expect(not_reserved_word, "reserved word \"{}\" cannot be used for the name of a variable.", t.content);
     advance_sibling();  // ident
     if (t.type == L_BRACKET) {
@@ -763,13 +763,24 @@ bool Cst::parse_identifier_and_ident_arr_list() {
         if (!t.content.empty() && t.content[0] == '-') {
             syntaxError("array declaration size must be a positive integer.");
         }
+
+        size_t off = (t.content.size() > 0 && t.content[0] == '+') ? 1 : 0;
+        std::string_view size = t.content.substr(off, t.content.size() - off);
+
+        uint32_t length = 0;
+        auto [ptr, err] = std::from_chars(size.data(), size.data() + size.size(), length);
+        if (err != std::errc()) {
+            syntaxError("unable to parse array declaration size: \"{}\".", t.content);
+        }
+        table.make_array(length);
+
         expect_sibling(INTEGER);
         expect_sibling(R_BRACKET);
     }
-
+ 
     if (t.type == COMMA) {
         advance_sibling();
-        parse_identifier_and_ident_arr_list();
+        parse_identifier_and_ident_arr_list(type);
     }
 
     return true;
@@ -799,6 +810,7 @@ bool Cst::parse_parameter_decl() {
         return false;
     }
 
+    check_shadow(tk->peek().content, "variable");
     table.add_param(tk->peek().content, to_datatype(t));
 
     advance_sibling();
@@ -808,6 +820,17 @@ bool Cst::parse_parameter_decl() {
 
     if (t.type == L_BRACKET) {
         advance_sibling();
+
+        size_t off = (t.content.size() > 0 && t.content[0] == '+') ? 1 : 0;
+        std::string_view size = t.content.substr(off, t.content.size() - off);
+
+        uint32_t length = 0;
+        auto [ptr, err] = std::from_chars(size.data(), size.data() + size.size(), length);
+        if (err != std::errc()) {
+            syntaxError("unable to parse array declaration size: \"{}\".", t.content);
+        }
+        table.make_array(length);
+
         expect_sibling(INTEGER);
         expect_sibling(R_BRACKET);
     }
@@ -843,6 +866,7 @@ bool Cst::parse_procedure() {
     advance_child();  // procedure
 
     expect(not_reserved_word, "reserved word \"{}\" cannot be the name of a procedure", t.content);
+    check_shadow(t.content, "procedure");
     table.enter_function(t.content, {});
     expect_sibling(IDENTIFIER);  // name
 
@@ -878,7 +902,9 @@ bool Cst::parse_function() {
 
     expect(is_datatype_specifier, "Expected datatype specifier after function declaration");
 
+    check_shadow(tk->peek().content, "function");
     table.enter_function(tk->peek().content, to_datatype(t));
+
     advance_sibling();  // return type
 
     expect(not_reserved_word, "reserved word \"{}\" cannot be used for the name of a function.", t.content);
@@ -926,6 +952,7 @@ bool Cst::parse_main() {
         return false;
     }
     advance_child();    // procedure
+    check_shadow(t.content, "procedure");
     table.enter_function(t.content, {});
     advance_sibling();  // main
 
@@ -933,7 +960,7 @@ bool Cst::parse_main() {
 
     expect_sibling(L_PAREN);
     expect("void", "Main procedure must have parameter type 'void', has {}", t.content);
-    advance_sibling();
+    advance_sibling(); // void
 
     expect_sibling(R_PAREN);
 
