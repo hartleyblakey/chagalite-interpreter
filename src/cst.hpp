@@ -161,29 +161,30 @@ public:
 
     void print() {
         Node* n = head;
+        constexpr std::string_view field_val = "{:>21}: {}\n";
         while (n) {
-            std::cout << std::format("{:>21}: {}\n", "IDENTIFIER_NAME", n->name);
+            std::cout << std::format(field_val, "IDENTIFIER_NAME", n->name);
             if (VariableNode* v = std::get_if<VariableNode>(&n->payload)) {
-                std::cout << std::format("{:>21}: {}\n", "IDENTIFIER_TYPE", "datatype");
-                std::cout << std::format("{:>21}: {}\n", "DATATYPE", vartype_to_name(v->type));
+                std::cout << std::format(field_val, "IDENTIFIER_TYPE", "datatype");
+                std::cout << std::format(field_val, "DATATYPE", vartype_to_name(v->type));
                 if (v->length) {
-                    std::cout << std::format("{:>21}: {}\n", "DATATYPE_IS_ARRAY", "yes");
+                    std::cout << std::format(field_val, "DATATYPE_IS_ARRAY", "yes");
                 } else {
-                    std::cout << std::format("{:>21}: {}\n", "DATATYPE_IS_ARRAY", "no");
+                    std::cout << std::format(field_val, "DATATYPE_IS_ARRAY", "no");
                 }
-                std::cout << std::format("{:>21}: {}\n", "DATATYPE_ARRAY_SIZE", v->length);
-                std::cout << std::format("{:>21}: {}\n", "SCOPE", n->scope);
+                std::cout << std::format(field_val, "DATATYPE_ARRAY_SIZE", v->length);
+                std::cout << std::format(field_val, "SCOPE", n->scope);
             } else if (FunctionNode* f = std::get_if<FunctionNode>(&n->payload)) {
                 if (f->return_type.has_value()) {
-                    std::cout << std::format("{:>21}: {}\n", "IDENTIFIER_TYPE", "function");
-                    std::cout << std::format("{:>21}: {}\n", "DATATYPE", vartype_to_name(*f->return_type));
+                    std::cout << std::format(field_val, "IDENTIFIER_TYPE", "function");
+                    std::cout << std::format(field_val, "DATATYPE", vartype_to_name(*f->return_type));
                 } else {
-                    std::cout << std::format("{:>21}: {}\n", "IDENTIFIER_TYPE", "procedure");
-                    std::cout << std::format("{:>21}: {}\n", "DATATYPE", "NOT APPLICABLE");
+                    std::cout << std::format(field_val, "IDENTIFIER_TYPE", "procedure");
+                    std::cout << std::format(field_val, "DATATYPE", "NOT APPLICABLE");
                 }
-                std::cout << std::format("{:>21}: {}\n", "DATATYPE_IS_ARRAY", "no");
-                std::cout << std::format("{:>21}: {}\n", "DATATYPE_ARRAY_SIZE", 0);
-                std::cout << std::format("{:>21}: {}\n", "SCOPE", n->scope);
+                std::cout << std::format(field_val, "DATATYPE_IS_ARRAY", "no");
+                std::cout << std::format(field_val, "DATATYPE_ARRAY_SIZE", 0);
+                std::cout << std::format(field_val, "SCOPE", n->scope);
 
                 // skip printing its parameters until the end
                 for (size_t i = 0; i < f->params.size(); i++) {
@@ -208,19 +209,19 @@ public:
                     continue;
                 }
                 std::cout << "\n";
-                std::cout << std::format("{:>21}: {}\n", "PARAMETER LIST FOR", n->name);
+                std::cout << std::format(field_val, "PARAMETER LIST FOR", n->name);
                 
                 for (Node* p : f->params) {
-                    std::cout << std::format("{:>21}: {}\n", "IDENTIFIER_NAME", p->name);
+                    std::cout << std::format(field_val, "IDENTIFIER_NAME", p->name);
                     VariableNode* v = &std::get<VariableNode>(p->payload);
-                    std::cout << std::format("{:>21}: {}\n", "DATATYPE", vartype_to_name(v->type));
+                    std::cout << std::format(field_val, "DATATYPE", vartype_to_name(v->type));
                     if (v->length) {
-                        std::cout << std::format("{:>21}: {}\n", "DATATYPE_IS_ARRAY", "yes");
+                        std::cout << std::format(field_val, "DATATYPE_IS_ARRAY", "yes");
                     } else {
-                        std::cout << std::format("{:>21}: {}\n", "DATATYPE_IS_ARRAY", "no");
+                        std::cout << std::format(field_val, "DATATYPE_IS_ARRAY", "no");
                     }
-                    std::cout << std::format("{:>21}: {}\n", "DATATYPE_ARRAY_SIZE", v->length);
-                    std::cout << std::format("{:>21}: {}\n", "SCOPE", p->scope);
+                    std::cout << std::format(field_val, "DATATYPE_ARRAY_SIZE", v->length);
+                    std::cout << std::format(field_val, "SCOPE", p->scope);
                     std::cout << "\n";
                 }
             }
