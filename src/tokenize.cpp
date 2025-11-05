@@ -16,6 +16,7 @@ std::string Tokenizer::getError() {
     return error;
 }
 
+// print the line that triggered the error
 std::string Tokenizer::getLineDebug() {
     if (i == file.length()) {
         return std::to_string(line) + std::string(": EOF");
@@ -25,16 +26,14 @@ std::string Tokenizer::getLineDebug() {
     size_t line_end = line_start;
 
     printf("i: %ld, len: %ld\n", i, file.length());
+
     while (line_start > 0 && file[line_start - 1] != '\n') {
         line_start--;
     }
 
     while (line_end < file.length() && file[line_end] != '\n')
         line_end++;
-    if (file[line_end] == '\n') {
-        // line_end--;
-    }
-    
+
     std::string line_num = std::to_string(line);
 
     // point to the column where the error occurred
