@@ -535,7 +535,7 @@ bool Cst::parse_boolean_expression() {
         }
     }
 
-    if (parenthesized && t.type == IDENTIFIER && is_relational_expression(tk->peek())) {
+    if (parenthesized && (t.type == IDENTIFIER || t.type == INTEGER) && is_relational_expression(tk->peek())) {
         // parse as
         // <L_PAREN> <NUMERICAL_OPERAND> <RELATIONAL_EXPRESSION> <NUMERICAL_OPERAND> <R_PAREN>
         // <L_PAREN> <NUMERICAL_OPERAND> <RELATIONAL_EXPRESSION> <NUMERICAL_OPERAND> <R_PAREN> <BOOLEAN_OPERATOR> <BOOLEAN_EXPRESSION>
